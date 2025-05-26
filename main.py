@@ -15,7 +15,8 @@ BUY_AMOUNT_SOL = 0.1
 
 # Use Solana WebSocket endpoint
 WS_URL = "wss://api.mainnet-beta.solana.com"
-SOLSCAN_API = "https://public-api.solscan.io/v2/account/solTransfers?account="
+SOLSCAN_API = "https://api.solscan.io/v2/account/solTransfers?account="
+
 
 
 async def track_whale():
