@@ -15,7 +15,8 @@ BUY_AMOUNT_SOL = 0.1
 
 # Use Solana WebSocket endpoint
 WS_URL = "wss://api.mainnet-beta.solana.com"
-SOLSCAN_API = "https://public-api.solscan.io/account/splTransfers?account="
+SOLSCAN_API = "https://public-api.solscan.io/v2/account/solTransfers?account="
+
 
 async def track_whale():
     print("Starting high-speed trade mirror for whale 2.b...")
