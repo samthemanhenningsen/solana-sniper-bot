@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 
 # === CONFIGURATION ===
 WHALE_NAME = "whale 2.b"
-YOUR_WALLET = "PASTE_YOUR_WALLET_HERE"
+YOUR_WALLET = "FLyYbJNGu3AxDL1ULsyoWiKwo5e4tcMbsXpTQguwkT5t"
 BUY_AMOUNT_SOL = 0.1
 SCRAPE_URL = "https://axiom.trade/trackers"
 seen = set()
