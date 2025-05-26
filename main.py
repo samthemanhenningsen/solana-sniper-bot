@@ -26,8 +26,9 @@ async def track_whale():
 
     while True:
         try:
-            r = requests.get(SOLSCAN_API + WHALE_ADDRESS)
-            data = r.json().get("data", [])
+           r = requests.get(SOLSCAN_API(WHALE_ADDRESS))
+data = r.json().get("result", [])
+
             for tx in data:
                 sig = tx.get("signature")
                 token = tx.get("tokenAddress")
