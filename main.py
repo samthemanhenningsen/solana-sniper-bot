@@ -8,7 +8,7 @@ import websockets
 import requests
 
 # === CONFIGURATION ===
-WHALE_ADDRESS = "5bx3JhSVcZGpGnMWtTpaE28WghUvT0H2Unb3ZB88st1X"
+WHALE_ADDRESS = "5bx3jhSVCzGPgMnWiTpAe2BWghUVToTH2UZnb3ZBs1tX"
 YOUR_WALLET = "FLyYbJNGu3AxDL1ULsyoWiKwo5e4tcMbsXpTQguwkT5t"
 BUY_AMOUNT_SOL = 0.1
 
@@ -44,13 +44,11 @@ async def track_whale():
 
         await asyncio.sleep(2)  # Near real-time polling
 
-# Placeholder trade functions — replace with your actual logic
 def execute_buy(token):
-    print(f"Executing BUY for {token}")
+    print(f"Executing BUY for {token} with {BUY_AMOUNT_SOL} SOL on wallet {YOUR_WALLET}")
 
 def execute_sell(token):
-    print(f"Executing SELL for {token}")
+    print(f"Executing SELL for {token} on wallet {YOUR_WALLET}")
 
-# Run the bot
-if __name__ == "__main__":
-    asyncio.run(track_whale())
+# Start tracking
+asyncio.run(track_whale())
