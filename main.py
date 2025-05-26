@@ -21,8 +21,11 @@ async def mirror_whale_trades():
 
     while True:
         try:
-            response = requests.get(AXIOM_API_URL)
-            trades = response.json().get("trades", [])
+           trades = [
+    {"signature": "sig123", "token": "BONK", "action": "buy"},
+    {"signature": "sig124", "token": "POPCAT", "action": "sell"}
+]
+
 
             for trade in trades:
                 sig = trade.get("signature")
