@@ -8,7 +8,7 @@ import time
 
 # === CONFIGURATION ===
 WHALE_NAME = "whale 2.b"
-YOUR_WALLET = "YOUR_WALLET_HERE"
+YOUR_WALLET = "FLyYbJNGu3AxDL1ULsyoWiKwo5e4tcMbsXpTQguwkT5t"
 BUY_AMOUNT_SOL = 0.1
 
 # Axiom live trade URL
