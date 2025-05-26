@@ -1,54 +1,56 @@
-# High-Speed Solana Whale Mirror Bot
-# Deploy on VPS (Railway/Fly.io/Render)
+# High-Speed Solana Whale Mirror Bot (Axiom Edition)
 # Author: Orion for Sam
+# Mirrors whale 2.b trades live from Axiom and copies them
 
 import asyncio
 import json
-import websockets
 import requests
 
 # === CONFIGURATION ===
-WHALE_ADDRESS = "5bx3jhSVCzGPgMnWiTpAe2BWghUVToTH2UZnb3ZBs1tX"
+WHALE_NAME = "whale 2.b"
 YOUR_WALLET = "FLyYbJNGu3AxDL1ULsyoWiKwo5e4tcMbsXpTQguwkT5t"
 BUY_AMOUNT_SOL = 0.1
 
-# Use Solana WebSocket endpoint
-WS_URL = "wss://api.mainnet-beta.solana.com"
-SOLSCAN_API = "https://api.solana.fm/v0/accounts/{}/transfers?cluster=mainnet-beta"
+# Axiom scraper endpoint (mocked for now)
+AXIOM_API_URL = "https://example.com/axiom/trades/whale2b"  # Replace with real or proxy URL later
 
-async def track_whale():
-    print("Starting high-speed trade mirror for whale 2.b...")
+async def mirror_whale_trades():
+    print("🔥 Live mirroring whale 2.b trades via Axiom...")
+
     seen = set()
 
     while True:
         try:
-            r = requests.get(SOLSCAN_API.format(WHALE_ADDRESS))
-            data = r.json().get("result", [])
+            response = requests.get(AXIOM_API_URL)
+            trades = response.json().get("trades", [])
 
-            for tx in data:
-                sig = tx.get("signature")
-                token = tx.get("tokenAddress")
-                action = tx.get("changeType")  # "in" or "out"
+            for trade in trades:
+                sig = trade.get("signature")
+                token = trade.get("token")
+                action = trade.get("action")  # "buy" or "sell"
 
                 if sig not in seen:
                     seen.add(sig)
-                    if action == "in":
-                        print(f"[BUY] Whale bought {token}. Mirroring...")
+
+                    if action == "buy":
+                        print(f"[BUY] Whale bought {token}. Mirroring buy...")
                         execute_buy(token)
-                    elif action == "out":
-                        print(f"[SELL] Whale sold {token}. Mirroring...")
+                    elif action == "sell":
+                        print(f"[SELL] Whale sold {token}. Mirroring sell...")
                         execute_sell(token)
 
         except Exception as e:
-            print("Error fetching whale trades:", e)
+            print("Error fetching or processing trades:", e)
 
-        await asyncio.sleep(2)  # Near real-time polling
+        await asyncio.sleep(2)
 
 def execute_buy(token):
-    print(f"Executing BUY for {token} with {BUY_AMOUNT_SOL} SOL on wallet {YOUR_WALLET}")
+    print(f"🟢 Executing buy: {token} with {BUY_AMOUNT_SOL} SOL")
+    # Insert your buy logic here (e.g., call Jupiter API or BONKbot CLI)
 
 def execute_sell(token):
-    print(f"Executing SELL for {token} on wallet {YOUR_WALLET}")
+    print(f"🔴 Executing sell: {token}")
+    # Insert your sell logic here (e.g., call Jupiter API or BONKbot CLI)
 
-# Start tracking
-asyncio.run(track_whale())
+if __name__ == "__main__":
+    asyncio.run(mirror_whale_trades())
