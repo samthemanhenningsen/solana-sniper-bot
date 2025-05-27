@@ -5,7 +5,7 @@ from solana.rpc.api import Client
 from solana.publickey import PublicKey
 from solana.keypair import Keypair
 from dotenv import load_dotenv
-from jupiter_python_sdk import JupiterApiClient, RoutePlan, QuoteResponse, TransactionResponse
+from jupiter_python_sdk.__init__ import JupiterApiClient, RoutePlan, QuoteResponse, TransactionResponse
 
 load_dotenv()
 
