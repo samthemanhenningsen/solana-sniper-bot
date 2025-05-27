@@ -7,7 +7,15 @@ import time
 
 # === CONFIGURATION ===
 WHALE_NAME = "whale 2.b"
-YOUR_WALLET = "FLyYbJNGua3AxDL1ULSyw0iKwoSe4tcMbsXpTG9uwkT5t"
+from solana.keypair import Keypair
+import json
+
+# Load your real wallet from wallet.json
+with open("wallet.json") as f:
+    secret_key = json.load(f)
+    keypair = Keypair.from_secret_key(bytes(secret_key))
+    YOUR_WALLET = str(keypair.public_key)
+
 BUY_AMOUNT_SOL = 0.1
 AXIOM_URL = "https://axiom.trade/trackers"
 
