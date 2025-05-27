@@ -1,2 +1,5 @@
+solana
+construct
+python-dotenv
 requests
-beautifulsoup4
+git+https://github.com/jup-ag/python-sdk.git
