@@ -1,0 +1,5 @@
+body{margin:0;background:radial-gradient(circle at top,#1d1038,#07070d);color:#c7f3ff;font-family:Verdana} .wrap,.arena{max-width:900px;margin:20px auto;padding:18px;border:2px solid #1affff66;background:#0b0f1add;box-shadow:0 0 30px #00e5ff33} button{margin:6px;padding:10px 14px;background:#1e275a;color:#d7f5ff;border:1px solid #21f3ff55;cursor:pointer} .active{background:#7c2fff} .stage{height:260px;position:relative;overflow:hidden;background:linear-gradient(#12071e,#111);border:1px solid #7b4dff}
+.fighter{position:absolute;bottom:25px;width:110px;height:160px;transition:all .22s ease}
+.fighter:before{content:'';position:absolute;inset:0;background:linear-gradient(#01f0ff,#ff2f92);clip-path:polygon(35% 0,65% 0,80% 55%,100% 100%,0 100%,20% 55%);filter:drop-shadow(0 0 6px #00e5ff)}
+.player{left:130px}.enemy{right:130px;transform:scaleX(-1)}
+.lunge.player{left:210px}.lunge.enemy{right:210px}.hit{transform:translateY(10px) rotate(-8deg)}.evade{transform:translateY(-10px)}.miss{transform:translateX(-8px)}
