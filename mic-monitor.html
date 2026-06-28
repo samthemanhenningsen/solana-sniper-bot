@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MV7i Monitor</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0a0a0a;
+      color: #fff;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      gap: 32px;
+      padding: 24px;
+    }
+    h1 { font-size: 18px; letter-spacing: 4px; text-transform: uppercase; color: #888; }
+
+    #status {
+      font-size: 13px;
+      color: #f00;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      height: 20px;
+    }
+    #status.on { color: #0f0; }
+
+    #btn {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      border: 3px solid #333;
+      background: #111;
+      color: #fff;
+      font-size: 13px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    #btn:hover { border-color: #fff; }
+    #btn.active { border-color: #0f0; background: #0a1a0a; color: #0f0; }
+
+    .meter-wrap {
+      width: 280px;
+      height: 8px;
+      background: #1a1a1a;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    #meter {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #0f0 0%, #ff0 70%, #f00 100%);
+      border-radius: 4px;
+      transition: width 0.04s;
+    }
+
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      width: 280px;
+    }
+    .row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    label { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: #666; width: 110px; }
+    input[type=range] {
+      flex: 1;
+      accent-color: #fff;
+      height: 2px;
+    }
+    .val { font-size: 11px; color: #888; width: 36px; text-align: right; }
+
+    .section-title {
+      font-size: 10px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: #333;
+      border-top: 1px solid #1a1a1a;
+      padding-top: 16px;
+      margin-top: 4px;
+    }
+
+    #device-select {
+      background: #111;
+      color: #888;
+      border: 1px solid #222;
+      padding: 6px 10px;
+      font-size: 11px;
+      letter-spacing: 1px;
+      width: 280px;
+      border-radius: 2px;
+    }
+  </style>
+</head>
+<body>
+  <h1>MV7i Monitor</h1>
+
+  <select id="device-select"><option>Select mic first</option></select>
+
+  <div id="status">Offline</div>
+
+  <button id="btn">Go Live</button>
+
+  <div class="meter-wrap"><div id="meter"></div></div>
+
+  <div class="controls">
+    <div class="section-title">Compression — Rap Tight</div>
+
+    <div class="row">
+      <label>Threshold</label>
+      <input type="range" id="threshold" min="-60" max="0" value="-24" step="1">
+      <span class="val" id="threshold-val">-24dB</span>
+    </div>
+    <div class="row">
+      <label>Ratio</label>
+      <input type="range" id="ratio" min="1" max="20" value="12" step="0.5">
+      <span class="val" id="ratio-val">12:1</span>
+    </div>
+    <div class="row">
+      <label>Attack</label>
+      <input type="range" id="attack" min="0.001" max="0.1" value="0.003" step="0.001">
+      <span class="val" id="attack-val">3ms</span>
+    </div>
+    <div class="row">
+      <label>Release</label>
+      <input type="range" id="release" min="0.01" max="1" value="0.1" step="0.01">
+      <span class="val" id="release-val">100ms</span>
+    </div>
+
+    <div class="section-title">EQ</div>
+
+    <div class="row">
+      <label>Hi-Pass</label>
+      <input type="range" id="highpass" min="40" max="300" value="100" step="5">
+      <span class="val" id="highpass-val">100Hz</span>
+    </div>
+    <div class="row">
+      <label>Presence</label>
+      <input type="range" id="presence" min="-12" max="12" value="3" step="0.5">
+      <span class="val" id="presence-val">+3dB</span>
+    </div>
+
+    <div class="section-title">Output</div>
+
+    <div class="row">
+      <label>Gain</label>
+      <input type="range" id="gain" min="0" max="2" value="1" step="0.05">
+      <span class="val" id="gain-val">100%</span>
+    </div>
+  </div>
+
+  <script>
+    let ctx, source, compressor, hipass, presence, gainNode, analyser, animFrame;
+    let stream = null;
+    let running = false;
+
+    const btn = document.getElementById('btn');
+    const statusEl = document.getElementById('status');
+    const meterEl = document.getElementById('meter');
+    const deviceSelect = document.getElementById('device-select');
+
+    // Populate device list
+    async function loadDevices() {
+      try {
+        await navigator.mediaDevices.getUserMedia({ audio: true }); // prompt permission first
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const inputs = devices.filter(d => d.kind === 'audioinput');
+        deviceSelect.innerHTML = '';
+        inputs.forEach(d => {
+          const opt = document.createElement('option');
+          opt.value = d.deviceId;
+          opt.textContent = d.label || `Mic ${d.deviceId.slice(0,8)}`;
+          if (d.label.toLowerCase().includes('mv7') || d.label.toLowerCase().includes('rode')) opt.selected = true;
+          deviceSelect.appendChild(opt);
+        });
+      } catch (e) {
+        statusEl.textContent = 'Mic permission denied';
+      }
+    }
+    loadDevices();
+
+    function buildGraph(stream) {
+      ctx = new AudioContext({ latencyHint: 'interactive', sampleRate: 48000 });
+      source = ctx.createMediaStreamSource(stream);
+
+      // High-pass to kill rumble
+      hipass = ctx.createBiquadFilter();
+      hipass.type = 'highpass';
+      hipass.frequency.value = parseFloat(document.getElementById('highpass').value);
+      hipass.Q.value = 0.7;
+
+      // Presence peak around 3kHz
+      presence = ctx.createBiquadFilter();
+      presence.type = 'peaking';
+      presence.frequency.value = 3000;
+      presence.Q.value = 1.0;
+      presence.gain.value = parseFloat(document.getElementById('presence').value);
+
+      // Compressor
+      compressor = ctx.createDynamicsCompressor();
+      compressor.threshold.value = parseFloat(document.getElementById('threshold').value);
+      compressor.knee.value = 2;
+      compressor.ratio.value = parseFloat(document.getElementById('ratio').value);
+      compressor.attack.value = parseFloat(document.getElementById('attack').value);
+      compressor.release.value = parseFloat(document.getElementById('release').value);
+
+      // Output gain
+      gainNode = ctx.createGain();
+      gainNode.gain.value = parseFloat(document.getElementById('gain').value);
+
+      // Analyser for meter
+      analyser = ctx.createAnalyser();
+      analyser.fftSize = 256;
+
+      // Chain: source → hipass → presence → compressor → gain → analyser → out
+      source.connect(hipass);
+      hipass.connect(presence);
+      presence.connect(compressor);
+      compressor.connect(gainNode);
+      gainNode.connect(analyser);
+      analyser.connect(ctx.destination);
+    }
+
+    function drawMeter() {
+      if (!analyser) return;
+      const buf = new Uint8Array(analyser.frequencyBinCount);
+      analyser.getByteFrequencyData(buf);
+      const avg = buf.reduce((s, v) => s + v, 0) / buf.length;
+      meterEl.style.width = Math.min(100, avg * 1.6) + '%';
+      animFrame = requestAnimationFrame(drawMeter);
+    }
+
+    async function start() {
+      const deviceId = deviceSelect.value;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            deviceId: deviceId ? { exact: deviceId } : undefined,
+            echoCancellation: false,
+            noiseSuppression: false,
+            autoGainControl: false,
+            latency: 0
+          }
+        });
+        buildGraph(stream);
+        ctx.resume();
+        drawMeter();
+        running = true;
+        btn.textContent = 'Stop';
+        btn.classList.add('active');
+        statusEl.textContent = 'Live';
+        statusEl.classList.add('on');
+      } catch (e) {
+        statusEl.textContent = 'Error: ' + e.message;
+      }
+    }
+
+    function stop() {
+      cancelAnimationFrame(animFrame);
+      if (ctx) { ctx.close(); ctx = null; }
+      if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+      meterEl.style.width = '0%';
+      running = false;
+      btn.textContent = 'Go Live';
+      btn.classList.remove('active');
+      statusEl.textContent = 'Offline';
+      statusEl.classList.remove('on');
+    }
+
+    btn.addEventListener('click', () => running ? stop() : start());
+
+    // Live control updates
+    function wire(id, node, param, fmt) {
+      const el = document.getElementById(id);
+      const valEl = document.getElementById(id + '-val');
+      el.addEventListener('input', () => {
+        const v = parseFloat(el.value);
+        valEl.textContent = fmt(v);
+        if (node && node[param]) node[param].value = v;
+        else if (node) node[param] = v;
+      });
+    }
+
+    document.getElementById('threshold').addEventListener('input', function() {
+      document.getElementById('threshold-val').textContent = this.value + 'dB';
+      if (compressor) compressor.threshold.value = parseFloat(this.value);
+    });
+    document.getElementById('ratio').addEventListener('input', function() {
+      document.getElementById('ratio-val').textContent = this.value + ':1';
+      if (compressor) compressor.ratio.value = parseFloat(this.value);
+    });
+    document.getElementById('attack').addEventListener('input', function() {
+      document.getElementById('attack-val').textContent = Math.round(this.value * 1000) + 'ms';
+      if (compressor) compressor.attack.value = parseFloat(this.value);
+    });
+    document.getElementById('release').addEventListener('input', function() {
+      document.getElementById('release-val').textContent = Math.round(this.value * 1000) + 'ms';
+      if (compressor) compressor.release.value = parseFloat(this.value);
+    });
+    document.getElementById('highpass').addEventListener('input', function() {
+      document.getElementById('highpass-val').textContent = this.value + 'Hz';
+      if (hipass) hipass.frequency.value = parseFloat(this.value);
+    });
+    document.getElementById('presence').addEventListener('input', function() {
+      const v = parseFloat(this.value);
+      document.getElementById('presence-val').textContent = (v >= 0 ? '+' : '') + v + 'dB';
+      if (presence) presence.gain.value = v;
+    });
+    document.getElementById('gain').addEventListener('input', function() {
+      document.getElementById('gain-val').textContent = Math.round(this.value * 100) + '%';
+      if (gainNode) gainNode.gain.value = parseFloat(this.value);
+    });
+  </script>
+</body>
+</html>
