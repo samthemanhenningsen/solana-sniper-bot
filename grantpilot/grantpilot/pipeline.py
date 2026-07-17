@@ -10,27 +10,30 @@ from pathlib import Path
 from .drafter import Drafter
 from .matcher import Matcher, MatchResult
 from .profile import ApplicantProfile
-from .sources import GrantsGovSource, Opportunity
+from .sources import DEFAULT_SOURCES, Opportunity
 
 log = logging.getLogger(__name__)
 
 
-def discover(profile: ApplicantProfile, max_grants: int = 100) -> list[Opportunity]:
+def discover(profile: ApplicantProfile, max_grants: int = 100, sources=None) -> list[Opportunity]:
     """Query every source with every focus area, dedupe, and enrich with full detail."""
-    source = GrantsGovSource()
+    instances = sources if sources is not None else [cls() for cls in DEFAULT_SOURCES]
     keywords = profile.focus_areas or [profile.description[:80]]
 
     seen: dict[str, Opportunity] = {}
-    for kw in keywords:
-        for opp in source.search(kw):
-            key = opp.number or opp.opportunity_id
-            if key not in seen:
-                seen[key] = opp
+    enrichers: dict[str, object] = {}
+    for source in instances:
+        for kw in keywords:
+            for opp in source.search(kw):
+                key = f"{opp.source}:{opp.number or opp.opportunity_id}"
+                if key not in seen:
+                    seen[key] = opp
+                    enrichers[key] = source
     opportunities = list(seen.values())[:max_grants]
     log.info("discovered %d unique opportunities from %d keywords", len(opportunities), len(keywords))
 
-    for opp in opportunities:
-        source.enrich(opp)
+    for key, opp in list(seen.items())[:max_grants]:
+        enrichers[key].enrich(opp)
     return opportunities
 
 

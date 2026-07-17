@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ opp.get('title', 'Application draft') }}</h1>
+<p class="muted">{{ opp.get('number') }} · {{ opp.get('agency') }} · closes {{ opp.get('close_date') or 'see portal' }}
+  {% if opp.get('url') %} · <a href="{{ opp['url'] }}" target="_blank" rel="noopener">Open on portal</a>{% endif %}
+</p>
+
+<div class="card">
+  <p>Status:
+    {% if draft.status == 'approved' %}<span class="pill ok">approved</span>
+    {% elif draft.status == 'submitted' %}<span class="pill ok">submitted</span>
+    {% else %}<span class="pill warn">needs review</span>{% endif %}
+  </p>
+  <form method="post" action="/drafts/{{ draft.id }}">
+    <textarea class="draft-body" name="content">{{ draft.content }}</textarea>
+    <div style="margin-top:1rem;display:flex;gap:.6rem">
+      <button class="btn" name="status" value="draft">Save</button>
+      <button class="btn secondary" name="status" value="approved">Save &amp; approve</button>
+      <button class="btn secondary" name="status" value="submitted">Mark submitted</button>
+    </div>
+  </form>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0">Pre-submission checklist</h2>
+  <pre class="checklist">{{ draft.checklist }}</pre>
+</div>
+{% endblock %}

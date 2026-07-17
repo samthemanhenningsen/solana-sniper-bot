@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Dashboard</h1>
+
+<div class="card">
+  <h2 style="margin-top:0">Applicant profiles</h2>
+  {% if profiles %}
+  <table>
+    <tr><th>Name</th><th>Auto-run</th><th>Min score</th><th></th></tr>
+    {% for p in profiles %}
+    <tr>
+      <td><a href="/profiles/{{ p.id }}">{{ p.name }}</a></td>
+      <td>{% if p.auto_run %}<span class="pill ok">nightly</span>{% else %}<span class="pill muted">manual</span>{% endif %}</td>
+      <td class="score">{{ p.min_score }}</td>
+      <td style="text-align:right">
+        <form method="post" action="/profiles/{{ p.id }}/run" style="display:inline">
+          <button class="btn small">Run pipeline</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p class="muted">No profiles yet. <a href="/profiles/new">Create the first one</a> — it takes two minutes
+  and drives everything: discovery, screening, and drafting.</p>
+  {% endif %}
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0">Recent runs</h2>
+  {% if runs %}
+  <table>
+    <tr><th>Run</th><th>Profile</th><th>Status</th><th>Considered</th><th>Eligible</th><th>Drafted</th><th>Started</th></tr>
+    {% for r in runs %}
+    {% set s = r.stats_dict() %}
+    <tr>
+      <td><a href="/runs/{{ r.id }}">#{{ r.id }}</a></td>
+      <td>{{ r.profile.name }}</td>
+      <td>
+        {% if r.status == 'completed' %}<span class="pill ok">completed</span>
+        {% elif r.status == 'failed' %}<span class="pill bad">failed</span>
+        {% elif r.status == 'running' %}<span class="pill warn">running</span>
+        {% else %}<span class="pill muted">queued</span>{% endif %}
+      </td>
+      <td class="score">{{ s.get('considered', '—') }}</td>
+      <td class="score">{{ s.get('eligible', '—') }}</td>
+      <td class="score">{{ s.get('drafted', '—') }}</td>
+      <td class="muted">{{ r.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p class="muted">No runs yet. Launch one from a profile above.</p>
+  {% endif %}
+</div>
+{% endblock %}

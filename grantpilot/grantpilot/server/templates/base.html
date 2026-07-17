@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}GrantPilot{% endblock %}</title>
+<style>
+  :root {
+    --ink: #1c2321; --paper: #f7f6f2; --card: #ffffff; --line: #e3e0d8;
+    --accent: #1f6f54; --accent-soft: #e4f0ea; --warn: #a45a1f; --muted: #6b7370;
+    --danger: #a33232;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink);
+         font: 15px/1.55 "Avenir Next", "Segoe UI", system-ui, sans-serif; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  header { display: flex; align-items: center; gap: 1.5rem; padding: .9rem 2rem;
+           background: var(--card); border-bottom: 1px solid var(--line); }
+  header .brand { font-weight: 700; font-size: 1.15rem; letter-spacing: .02em; color: var(--ink); }
+  header .brand span { color: var(--accent); }
+  header nav { display: flex; gap: 1.1rem; margin-left: auto; align-items: center; }
+  main { max-width: 1080px; margin: 2rem auto; padding: 0 1.5rem; }
+  h1 { font-size: 1.5rem; margin: 0 0 1rem; } h2 { font-size: 1.15rem; margin: 1.8rem 0 .7rem; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+          padding: 1.25rem 1.5rem; margin-bottom: 1.2rem; }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; font-size: .78rem; text-transform: uppercase; letter-spacing: .06em;
+       color: var(--muted); padding: .45rem .6rem; border-bottom: 1px solid var(--line); }
+  td { padding: .55rem .6rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  .btn { display: inline-block; background: var(--accent); color: #fff; border: none;
+         border-radius: 7px; padding: .5rem 1rem; font-size: .9rem; cursor: pointer; }
+  .btn:hover { filter: brightness(1.08); text-decoration: none; }
+  .btn.secondary { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+  .btn.small { padding: .3rem .7rem; font-size: .8rem; }
+  .pill { display: inline-block; border-radius: 99px; padding: .12rem .6rem; font-size: .75rem; font-weight: 600; }
+  .pill.ok { background: var(--accent-soft); color: var(--accent); }
+  .pill.warn { background: #f6ead9; color: var(--warn); }
+  .pill.muted { background: #ececec; color: var(--muted); }
+  .pill.bad { background: #f6dede; color: var(--danger); }
+  .score { font-variant-numeric: tabular-nums; font-weight: 700; }
+  form.stack label { display: block; font-size: .8rem; font-weight: 600; color: var(--muted);
+                     margin: .8rem 0 .2rem; }
+  form.stack input[type=text], form.stack input[type=email], form.stack input[type=password],
+  form.stack input[type=number], form.stack textarea {
+    width: 100%; padding: .5rem .65rem; border: 1px solid var(--line); border-radius: 7px;
+    font: inherit; background: #fff; }
+  form.stack textarea { min-height: 90px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 1.2rem; }
+  @media (max-width: 700px) { .grid2 { grid-template-columns: 1fr; } }
+  .error { background: #f6dede; color: var(--danger); border-radius: 7px; padding: .6rem .9rem; margin: .8rem 0; }
+  .notice { background: var(--accent-soft); color: var(--accent); border-radius: 7px; padding: .6rem .9rem; margin: .8rem 0; }
+  .muted { color: var(--muted); }
+  .draft-body { width: 100%; min-height: 480px; font: 13px/1.5 ui-monospace, monospace;
+                padding: 1rem; border: 1px solid var(--line); border-radius: 8px; }
+  pre.checklist { white-space: pre-wrap; font: 13px/1.6 ui-monospace, monospace;
+                  background: var(--paper); padding: 1rem; border-radius: 8px; }
+</style>
+</head>
+<body>
+<header>
+  <a class="brand" href="/">Grant<span>Pilot</span></a>
+  {% if user %}
+  <nav>
+    <a href="/">Dashboard</a>
+    <a href="/profiles/new">New profile</a>
+    {% if billing_enabled %}<a href="/billing">Billing</a>{% endif %}
+    {% if user.is_admin %}<a href="/admin">Admin</a>{% endif %}
+    <span class="muted">{{ user.email }}{% if user.plan == 'pro' %} · <span class="pill ok">pro</span>{% endif %}</span>
+    <form method="post" action="/logout" style="margin:0"><button class="btn secondary small">Log out</button></form>
+  </nav>
+  {% endif %}
+</header>
+<main>{% block content %}{% endblock %}</main>
+</body>
+</html>

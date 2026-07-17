@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Run #{{ run.id }} — {{ run.profile.name }}</h1>
+
+<div class="card">
+  <p>
+    Status:
+    {% if run.status == 'completed' %}<span class="pill ok">completed</span>
+    {% elif run.status == 'failed' %}<span class="pill bad">failed</span>
+    {% elif run.status == 'running' %}<span class="pill warn">running</span>
+    {% else %}<span class="pill muted">queued</span>{% endif %}
+    {% if stats %}
+      &nbsp;·&nbsp; {{ stats.get('considered', 0) }} considered
+      &nbsp;·&nbsp; {{ stats.get('eligible', 0) }} eligible
+      &nbsp;·&nbsp; {{ stats.get('drafted', 0) }} drafted
+    {% endif %}
+    {% if run.status == 'completed' %}
+      &nbsp;·&nbsp; <a class="btn small secondary" href="/runs/{{ run.id }}/export.zip">Download packet zip</a>
+    {% endif %}
+  </p>
+  {% if stats.get('drafting_gated') %}
+  <div class="notice">Screening ran in full, but drafting is a Pro feature —
+    <a href="/billing">upgrade</a> to generate application packets automatically.</div>
+  {% endif %}
+  {% if run.error %}<div class="error">{{ run.error }}</div>{% endif %}
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0">Decisions ({{ decisions | length }})</h2>
+  {% if decisions %}
+  <table>
+    <tr><th>Score</th><th>Opportunity</th><th>Agency</th><th>Closes</th><th>Verdict</th><th>Draft</th></tr>
+    {% for d in decisions %}
+    {% set opp = d.opportunity_dict() %}
+    <tr>
+      <td class="score">{{ d.fit_score }}</td>
+      <td>
+        {% if opp.get('url') %}<a href="{{ opp['url'] }}" target="_blank" rel="noopener">{{ opp.get('title','?') }}</a>
+        {% else %}{{ opp.get('title','?') }}{% endif %}
+        <div class="muted" style="font-size:.8rem">{{ opp.get('number') or opp.get('opportunity_id') }} · {{ opp.get('source','') }}</div>
+        <div class="muted" style="font-size:.85rem">{{ d.rationale }}</div>
+        {% if d.missing_list() %}
+        <div style="font-size:.8rem;color:var(--warn)">Needs: {{ d.missing_list() | join('; ') }}</div>
+        {% endif %}
+      </td>
+      <td>{{ opp.get('agency','') }}</td>
+      <td class="muted">{{ opp.get('close_date','') }}</td>
+      <td>{% if d.eligible %}<span class="pill ok">eligible</span>{% else %}<span class="pill muted">no</span>{% endif %}</td>
+      <td>
+        {% if d.draft %}
+          <a class="btn small" href="/drafts/{{ d.draft.id }}">
+            {{ 'Review' if d.draft.status == 'draft' else d.draft.status }}
+          </a>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p class="muted">No decisions yet{% if run.status in ('queued','running') %} — the pipeline is working. This page refreshes automatically.{% endif %}</p>
+  {% endif %}
+</div>
+
+{% if run.status in ('queued', 'running') %}
+<script>
+  setInterval(async () => {
+    const r = await fetch('/api/runs/{{ run.id }}/status');
+    if (!r.ok) return;
+    const s = await r.json();
+    if (s.status !== '{{ run.status }}' || s.decisions !== {{ decisions | length }}) location.reload();
+  }, 5000);
+</script>
+{% endif %}
+{% endblock %}

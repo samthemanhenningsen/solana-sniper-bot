@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Billing</h1>
+<div class="card" style="max-width:520px">
+  {% if user.plan == 'pro' %}
+    <p><span class="pill ok">Pro</span> — your subscription is active. Every eligible grant gets a full
+    drafted application packet automatically.</p>
+  {% elif billing_enabled %}
+    <p>You're on the <strong>free plan</strong>: unlimited discovery and eligibility screening.</p>
+    <p><strong>Pro</strong> adds automatic application drafting — a complete, tailored packet for every
+    eligible grant above your fit threshold, refreshed nightly.</p>
+    <form method="post" action="/billing/checkout">
+      <button class="btn">Upgrade to Pro</button>
+    </form>
+  {% else %}
+    <p class="notice">Billing is not configured on this server — all features are enabled.
+    Set <code>STRIPE_SECRET_KEY</code>, <code>STRIPE_PRICE_ID</code>, and
+    <code>STRIPE_WEBHOOK_SECRET</code> to start charging customers.</p>
+  {% endif %}
+</div>
+{% endblock %}

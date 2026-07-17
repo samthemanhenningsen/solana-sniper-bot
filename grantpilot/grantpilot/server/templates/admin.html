@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Admin</h1>
+
+<div class="card">
+  <h2 style="margin-top:0">Customers ({{ users | length }})</h2>
+  <table>
+    <tr><th>Email</th><th>Plan</th><th>Profiles</th><th>Joined</th></tr>
+    {% for u in users %}
+    <tr>
+      <td>{{ u.email }}{% if u.is_admin %} <span class="pill muted">admin</span>{% endif %}</td>
+      <td>{% if u.plan == 'pro' %}<span class="pill ok">pro</span>{% else %}<span class="pill muted">free</span>{% endif %}</td>
+      <td class="score">{{ u.profiles | length }}</td>
+      <td class="muted">{{ u.created_at.strftime('%Y-%m-%d') }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0">Recent runs (all customers)</h2>
+  <table>
+    <tr><th>Run</th><th>Profile</th><th>Owner</th><th>Status</th><th>Created</th></tr>
+    {% for r in runs %}
+    <tr>
+      <td><a href="/runs/{{ r.id }}">#{{ r.id }}</a></td>
+      <td>{{ r.profile.name }}</td>
+      <td class="muted">{{ r.profile.user.email }}</td>
+      <td>{{ r.status }}</td>
+      <td class="muted">{{ r.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

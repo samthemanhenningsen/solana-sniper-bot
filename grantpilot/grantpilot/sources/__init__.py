@@ -2,5 +2,8 @@
 
 from .base import Opportunity
 from .grants_gov import GrantsGovSource
+from .sbir import SbirSource
 
-__all__ = ["Opportunity", "GrantsGovSource"]
+DEFAULT_SOURCES = [GrantsGovSource, SbirSource]
+
+__all__ = ["Opportunity", "GrantsGovSource", "SbirSource", "DEFAULT_SOURCES"]

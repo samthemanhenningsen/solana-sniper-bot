@@ -3,3 +3,5 @@ __pycache__/
 outputs/
 profile.json
 .env
+grantpilot.db
+*.db

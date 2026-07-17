@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ 'Edit profile' if profile else 'New applicant profile' }}</h1>
+{% if error %}<div class="error">{{ error }}</div>{% endif %}
+<div class="card">
+<form class="stack" method="post" action="{{ '/profiles/%d' % profile.id if profile else '/profiles/new' }}">
+  <div class="grid2">
+    <div>
+      <label>Legal name</label>
+      <input type="text" name="legal_name" value="{{ data.get('legal_name','') }}" required>
+      <label>Entity type (LLC, 501(c)(3), individual, …)</label>
+      <input type="text" name="entity_type" value="{{ data.get('entity_type','') }}" required>
+      <label>City</label>
+      <input type="text" name="city" value="{{ data.get('city','') }}">
+      <label>State</label>
+      <input type="text" name="state" value="{{ data.get('state','') }}">
+      <label>Founded year</label>
+      <input type="number" name="founded_year" value="{{ data.get('founded_year','') or '' }}">
+      <label>Employees</label>
+      <input type="number" name="employee_count" value="{{ data.get('employee_count','') or '' }}">
+      <label>Annual revenue (USD)</label>
+      <input type="number" name="annual_revenue_usd" value="{{ data.get('annual_revenue_usd','') or '' }}">
+    </div>
+    <div>
+      <label>What do you do? (drives discovery — be specific)</label>
+      <textarea name="description" required>{{ data.get('description','') }}</textarea>
+      <label>Mission</label>
+      <textarea name="mission">{{ data.get('mission','') }}</textarea>
+      <label>Focus areas (comma-separated keywords)</label>
+      <input type="text" name="focus_areas" value="{{ data.get('focus_areas') | join(', ') if data.get('focus_areas') is iterable and data.get('focus_areas') is not string else data.get('focus_areas','') }}">
+      <label>Certifications (veteran-owned, woman-owned, 8(a), …)</label>
+      <input type="text" name="certifications" value="{{ data.get('certifications') | join(', ') if data.get('certifications') is iterable and data.get('certifications') is not string else data.get('certifications','') }}">
+      <label>NAICS codes</label>
+      <input type="text" name="naics_codes" value="{{ data.get('naics_codes') | join(', ') if data.get('naics_codes') is iterable and data.get('naics_codes') is not string else data.get('naics_codes','') }}">
+      <label>Past projects (comma-separated)</label>
+      <input type="text" name="past_projects" value="{{ data.get('past_projects') | join(', ') if data.get('past_projects') is iterable and data.get('past_projects') is not string else data.get('past_projects','') }}">
+    </div>
+  </div>
+  <label>What would the funding be used for?</label>
+  <textarea name="funding_needs">{{ data.get('funding_needs','') }}</textarea>
+  <div class="grid2">
+    <div>
+      <label>Contact name</label>
+      <input type="text" name="contact_name" value="{{ (data.get('contact') or {}).get('name','') }}">
+      <label>Contact email</label>
+      <input type="text" name="contact_email" value="{{ (data.get('contact') or {}).get('email','') }}">
+      <label>Contact phone</label>
+      <input type="text" name="contact_phone" value="{{ (data.get('contact') or {}).get('phone','') }}">
+    </div>
+    <div>
+      <label>SAM.gov UEI (if registered)</label>
+      <input type="text" name="uei" value="{{ data.get('uei','') }}">
+      <label style="margin-top:1rem">
+        <input type="checkbox" name="has_sam_registration" {% if data.get('has_sam_registration') %}checked{% endif %}>
+        Registered in SAM.gov
+      </label>
+      <label>
+        <input type="checkbox" name="auto_run" {% if profile and profile.auto_run %}checked{% endif %}>
+        Auto-run nightly (new grants post daily)
+      </label>
+      <label>Minimum fit score to draft (0–100)</label>
+      <input type="number" name="min_score" value="{{ profile.min_score if profile else 60 }}" min="0" max="100">
+      <label>Max grants per run</label>
+      <input type="number" name="max_grants" value="{{ profile.max_grants if profile else 50 }}" min="1" max="500">
+    </div>
+  </div>
+  <div style="margin-top:1.4rem">
+    <button class="btn">{{ 'Save changes' if profile else 'Create profile' }}</button>
+    <a class="btn secondary" href="/">Cancel</a>
+  </div>
+</form>
+</div>
+{% endblock %}
