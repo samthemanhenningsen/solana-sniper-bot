@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 440" role="img" aria-label="Espacio de terapia cálido con dos sillones y plantas">
+  <defs>
+    <linearGradient id="wall" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f3ecdf"/>
+      <stop offset="1" stop-color="#e7dcc6"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="0" y="0" width="480" height="440" rx="24" fill="url(#wall)"/>
+
+  <!-- window with sun -->
+  <rect x="180" y="46" width="120" height="120" rx="12" fill="#ddeeeb" stroke="#1d5f57" stroke-width="4"/>
+  <line x1="240" y1="46" x2="240" y2="166" stroke="#1d5f57" stroke-width="4"/>
+  <line x1="180" y1="106" x2="300" y2="106" stroke="#1d5f57" stroke-width="4"/>
+  <circle cx="214" cy="80" r="14" fill="#f6c98f"/>
+
+  <!-- floor -->
+  <rect x="0" y="330" width="480" height="110" fill="#e0d3bd" rx="24"/>
+  <ellipse cx="240" cy="352" rx="170" ry="26" fill="#d98e5f" opacity="0.35"/>
+
+  <!-- armchair left -->
+  <g>
+    <rect x="52" y="230" width="120" height="96" rx="20" fill="#1d5f57"/>
+    <rect x="66" y="206" width="92" height="60" rx="16" fill="#2e8077"/>
+    <rect x="44" y="252" width="26" height="70" rx="12" fill="#123f3a"/>
+    <rect x="154" y="252" width="26" height="70" rx="12" fill="#123f3a"/>
+    <rect x="66" y="326" width="14" height="22" rx="5" fill="#8a6f4e"/>
+    <rect x="144" y="326" width="14" height="22" rx="5" fill="#8a6f4e"/>
+  </g>
+
+  <!-- armchair right -->
+  <g>
+    <rect x="308" y="230" width="120" height="96" rx="20" fill="#d98e5f"/>
+    <rect x="322" y="206" width="92" height="60" rx="16" fill="#e8a76a"/>
+    <rect x="300" y="252" width="26" height="70" rx="12" fill="#c07a4d"/>
+    <rect x="410" y="252" width="26" height="70" rx="12" fill="#c07a4d"/>
+    <rect x="322" y="326" width="14" height="22" rx="5" fill="#8a6f4e"/>
+    <rect x="400" y="326" width="14" height="22" rx="5" fill="#8a6f4e"/>
+  </g>
+
+  <!-- small table with tea -->
+  <g>
+    <rect x="216" y="278" width="48" height="8" rx="4" fill="#8a6f4e"/>
+    <rect x="234" y="286" width="12" height="52" rx="5" fill="#8a6f4e"/>
+    <ellipse cx="240" cy="340" rx="26" ry="7" fill="#8a6f4e"/>
+    <rect x="224" y="262" width="16" height="16" rx="4" fill="#faf6ef" stroke="#1d5f57" stroke-width="2.5"/>
+    <path d="M228 258 q2 -6 6 0" stroke="#1d5f57" stroke-width="2" fill="none" stroke-linecap="round"/>
+  </g>
+
+  <!-- potted plant left -->
+  <g>
+    <path d="M96 130 q-26 -34 6 -58 q16 26 4 58z" fill="#2e8077"/>
+    <path d="M104 132 q30 -26 8 -62 q-22 18 -18 60z" fill="#1d5f57"/>
+    <path d="M100 134 q4 -40 0 -58" stroke="#123f3a" stroke-width="2.5" fill="none"/>
+    <path d="M82 132 h38 l-6 40 h-26 z" fill="#d98e5f"/>
+  </g>
+
+  <!-- hanging plant right -->
+  <g>
+    <path d="M392 46 h44 l-6 30 h-32 z" fill="#1d5f57"/>
+    <path d="M398 76 q-8 34 10 52" stroke="#2e8077" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <path d="M420 76 q12 30 -4 56" stroke="#2e8077" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <circle cx="408" cy="130" r="6" fill="#2e8077"/>
+    <circle cx="416" cy="134" r="6" fill="#2e8077"/>
+  </g>
+
+  <!-- framed heart art -->
+  <rect x="64" y="60" width="56" height="56" rx="8" fill="#faf6ef" stroke="#8a6f4e" stroke-width="3"/>
+  <path d="M92 100 s-16 -9 -16 -20 c0 -6 5 -10 10 -10 c3 0 5 2 6 4 c1 -2 3 -4 6 -4 c5 0 10 4 10 10 c0 11 -16 20 -16 20z" fill="#d98e5f"/>
+</svg>

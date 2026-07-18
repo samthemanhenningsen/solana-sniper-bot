@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 520" role="img" aria-label="Persona serena meditando al amanecer rodeada de hojas">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fdf3e3"/>
+      <stop offset="1" stop-color="#ddeeeb"/>
+    </linearGradient>
+    <linearGradient id="sun" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f6c98f"/>
+      <stop offset="1" stop-color="#e8a76a"/>
+    </linearGradient>
+  </defs>
+
+  <!-- backdrop -->
+  <circle cx="280" cy="250" r="230" fill="url(#sky)"/>
+  <circle cx="280" cy="210" r="72" fill="url(#sun)" opacity="0.9"/>
+  <circle cx="280" cy="210" r="96" fill="none" stroke="#e8a76a" stroke-width="2" opacity="0.35"/>
+
+  <!-- hills -->
+  <path d="M60 340 Q170 270 300 330 Q420 385 500 330 L500 420 Q280 480 60 420 Z" fill="#2e8077" opacity="0.25"/>
+  <path d="M50 380 Q200 310 340 370 Q450 415 510 375 L510 440 Q280 500 50 440 Z" fill="#1d5f57" opacity="0.3"/>
+
+  <!-- figure: seated meditation -->
+  <g>
+    <!-- ground shadow -->
+    <ellipse cx="280" cy="416" rx="118" ry="20" fill="#123f3a" opacity="0.14"/>
+    <!-- legs crossed -->
+    <path d="M190 400 Q225 358 280 358 Q335 358 370 400 Q330 418 280 418 Q230 418 190 400 Z" fill="#1d5f57"/>
+    <!-- torso -->
+    <path d="M236 388 Q232 300 250 268 Q265 244 280 244 Q295 244 310 268 Q328 300 324 388 Q302 400 280 400 Q258 400 236 388 Z" fill="#2e8077"/>
+    <!-- arms resting -->
+    <path d="M238 300 Q210 330 216 372 Q224 386 240 380 Q236 336 252 306 Z" fill="#2e8077"/>
+    <path d="M322 300 Q350 330 344 372 Q336 386 320 380 Q324 336 308 306 Z" fill="#2e8077"/>
+    <!-- hands -->
+    <circle cx="228" cy="378" r="11" fill="#e8b48c"/>
+    <circle cx="332" cy="378" r="11" fill="#e8b48c"/>
+    <!-- head -->
+    <circle cx="280" cy="212" r="34" fill="#e8b48c"/>
+    <!-- hair -->
+    <path d="M246 208 Q246 172 280 172 Q314 172 314 208 Q314 188 280 186 Q246 188 246 208 Z" fill="#3c2f26"/>
+    <!-- serene face -->
+    <path d="M266 214 Q270 218 274 214" stroke="#3c2f26" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+    <path d="M286 214 Q290 218 294 214" stroke="#3c2f26" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+    <path d="M272 232 Q280 238 288 232" stroke="#c98d63" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+  </g>
+
+  <!-- floating leaves -->
+  <g fill="#2e8077">
+    <path d="M96 150 q18 -26 44 -18 q-8 28 -36 30 q-6 -4 -8 -12z" opacity="0.8"/>
+    <path d="M448 130 q20 -22 46 -12 q-12 26 -40 26 q-4 -6 -6 -14z" opacity="0.7"/>
+    <path d="M120 260 q14 -20 36 -14 q-6 22 -28 24 q-6 -4 -8 -10z" opacity="0.5"/>
+    <path d="M460 270 q14 -20 36 -14 q-6 22 -28 24 q-6 -4 -8 -10z" opacity="0.55"/>
+    <path d="M170 80 q12 -18 32 -12 q-6 20 -26 21 q-4 -4 -6 -9z" opacity="0.45"/>
+    <path d="M400 60 q12 -18 32 -12 q-6 20 -26 21 q-4 -4 -6 -9z" opacity="0.4"/>
+  </g>
+
+  <!-- gentle sparkles -->
+  <g fill="#e8a76a" opacity="0.7">
+    <circle cx="150" cy="200" r="4"/>
+    <circle cx="420" cy="200" r="5"/>
+    <circle cx="200" cy="120" r="3"/>
+    <circle cx="370" cy="110" r="3"/>
+  </g>
+</svg>

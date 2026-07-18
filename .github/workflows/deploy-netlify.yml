@@ -1,0 +1,51 @@
+name: Deploy to Netlify
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [claude/website-netlify-builder-9e220g]
+    paths:
+      - "sites/psic-luis-morales/**"
+      - ".github/workflows/deploy-netlify.yml"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create site if needed and deploy
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          SITE_NAME: psicluismorales
+        run: |
+          if [ -z "$NETLIFY_AUTH_TOKEN" ]; then
+            echo "::error::NETLIFY_AUTH_TOKEN secret is not set. Add it in Settings -> Secrets and variables -> Actions."
+            exit 1
+          fi
+          AUTH="Authorization: Bearer $NETLIFY_AUTH_TOKEN"
+
+          SITE_ID=$(curl -sS -H "$AUTH" "https://api.netlify.com/api/v1/sites/$SITE_NAME.netlify.app" | jq -r '.id // empty')
+          if [ -z "$SITE_ID" ]; then
+            echo "Site not found, creating $SITE_NAME ..."
+            RESP=$(curl -sS -X POST -H "$AUTH" -H "Content-Type: application/json" \
+              -d "{\"name\":\"$SITE_NAME\"}" "https://api.netlify.com/api/v1/sites")
+            SITE_ID=$(echo "$RESP" | jq -r '.id // empty')
+            if [ -z "$SITE_ID" ]; then
+              echo "::error::Could not create site '$SITE_NAME'. Netlify said: $(echo "$RESP" | jq -c '.errors // .message // .')"
+              exit 1
+            fi
+          fi
+          echo "Deploying to site id: $SITE_ID"
+
+          cd sites/psic-luis-morales
+          zip -qr /tmp/site.zip .
+          DEPLOY=$(curl -sS -X POST -H "$AUTH" -H "Content-Type: application/zip" \
+            --data-binary @/tmp/site.zip "https://api.netlify.com/api/v1/sites/$SITE_ID/deploys")
+          STATE=$(echo "$DEPLOY" | jq -r '.state // empty')
+          if [ -z "$STATE" ]; then
+            echo "::error::Deploy failed: $(echo "$DEPLOY" | jq -c '.errors // .message // .')"
+            exit 1
+          fi
+          echo "Deploy state: $STATE"
+          echo "Live at: https://$SITE_NAME.netlify.app"
