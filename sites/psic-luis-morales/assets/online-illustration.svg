@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 300" role="img" aria-label="Sesión de terapia en línea por videollamada">
+  <rect width="420" height="300" rx="18" fill="#f3ecdf"/>
+
+  <!-- laptop -->
+  <rect x="90" y="60" width="240" height="150" rx="12" fill="#123f3a"/>
+  <rect x="102" y="72" width="216" height="126" rx="6" fill="#ddeeeb"/>
+  <path d="M70 210 h280 l14 26 q2 8 -8 8 H64 q-10 0 -8 -8 z" fill="#1d5f57"/>
+  <rect x="176" y="222" width="68" height="8" rx="4" fill="#123f3a" opacity="0.5"/>
+
+  <!-- video call: two participants -->
+  <rect x="108" y="78" width="102" height="114" rx="5" fill="#2e8077"/>
+  <circle cx="159" cy="120" r="18" fill="#e8b48c"/>
+  <path d="M145 116 q0 -16 14 -16 q14 0 14 16 q-6 -8 -14 -8 q-8 0 -14 8z" fill="#3c2f26"/>
+  <path d="M131 176 q10 -26 28 -26 q18 0 28 26 z" fill="#f6c98f"/>
+
+  <rect x="214" y="78" width="98" height="114" rx="5" fill="#d98e5f"/>
+  <circle cx="263" cy="120" r="18" fill="#e0a37a"/>
+  <path d="M249 118 q-2 -18 14 -18 q16 0 14 18 q-4 -10 -14 -10 q-10 0 -14 10z" fill="#26201c"/>
+  <path d="M235 176 q10 -26 28 -26 q18 0 28 26 z" fill="#faf6ef"/>
+
+  <!-- call controls -->
+  <circle cx="196" cy="186" r="7" fill="#faf6ef"/>
+  <rect x="193" y="182" width="6" height="6" rx="1.5" fill="#1d5f57"/>
+
+  <!-- wifi + heart accents -->
+  <g stroke="#2e8077" stroke-width="4" fill="none" stroke-linecap="round">
+    <path d="M348 84 q14 -14 28 0"/>
+    <path d="M354 96 q8 -8 16 0"/>
+  </g>
+  <circle cx="362" cy="106" r="3.5" fill="#2e8077"/>
+  <path d="M56 110 s-12 -7 -12 -15 c0 -5 4 -8 8 -8 c2 0 3.5 1.5 4 3 c0.5 -1.5 2 -3 4 -3 c4 0 8 3 8 8 c0 8 -12 15 -12 15z" fill="#d98e5f"/>
+</svg>
