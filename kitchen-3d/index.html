@@ -1,0 +1,1010 @@
+<title>The Walkable Kitchen</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root{
+    --ink:#f2ead9; --ink-dim:#c9bda6; --panel:rgba(28,20,14,.86); --panel-line:rgba(242,234,217,.16);
+    --accent:#d98e4a; --accent-ink:#2a1c10; --good:#9dc08b;
+    --display:'Bricolage Grotesque',system-ui,sans-serif; --mono:'IBM Plex Mono',ui-monospace,monospace;
+  }
+  html,body{height:100%}
+  body{margin:0;background:#171210;color:var(--ink);font-family:var(--display);overflow:hidden}
+  #app{position:fixed;inset:0}
+  #c{display:block;width:100%;height:100%;touch-action:none}
+  .plate{position:absolute;z-index:5;background:var(--panel);border:1px solid var(--panel-line);border-radius:10px;backdrop-filter:blur(6px)}
+  #brand{top:14px;left:14px;padding:10px 14px 11px}
+  #brand h1{margin:0;font-size:17px;font-weight:700;letter-spacing:.01em}
+  #brand .sub{margin-top:2px;font-family:var(--mono);font-size:11px;color:var(--ink-dim)}
+  #chips{top:14px;right:14px;display:flex;gap:6px;padding:6px;flex-wrap:wrap;justify-content:flex-end;max-width:min(60vw,430px)}
+  .chip{font-family:var(--display);font-weight:600;font-size:12.5px;color:var(--ink-dim);background:transparent;
+    border:1px solid var(--panel-line);border-radius:7px;padding:6px 10px;cursor:pointer;white-space:nowrap}
+  .chip:hover{color:var(--ink)}
+  .chip:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+  .chip[data-on="1"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+  .chip kbd{font-family:var(--mono);font-size:10px;opacity:.75;margin-left:5px}
+  #hints{bottom:14px;left:50%;transform:translateX(-50%);padding:7px 14px;font-family:var(--mono);font-size:11.5px;color:var(--ink-dim);white-space:nowrap}
+  #hints b{color:var(--ink);font-weight:500}
+  #pos{bottom:14px;right:14px;padding:7px 11px;font-family:var(--mono);font-size:11.5px;color:var(--ink-dim);font-variant-numeric:tabular-nums}
+  #measure{top:64px;left:50%;transform:translateX(-50%);padding:8px 14px;font-family:var(--mono);font-size:12.5px;color:var(--accent);display:none}
+  #cross{position:absolute;z-index:4;left:50%;top:50%;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;border-radius:50%;
+    background:rgba(242,234,217,.9);box-shadow:0 0 0 1.5px rgba(23,18,16,.45);pointer-events:none}
+  #cross.tape{background:var(--accent);box-shadow:0 0 0 2px rgba(23,18,16,.55),0 0 8px var(--accent)}
+  #overlay{position:absolute;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;
+    background:radial-gradient(ellipse at 50% 40%,rgba(23,18,16,.55),rgba(23,18,16,.88));cursor:pointer}
+  #card{max-width:430px;margin:16px;padding:26px 30px 24px;background:var(--panel);border:1px solid var(--panel-line);border-radius:14px;text-align:center}
+  #card h1{margin:0 0 4px;font-size:30px;font-weight:700;text-wrap:balance;letter-spacing:-.01em}
+  #card .dims{font-family:var(--mono);font-size:12px;color:var(--accent);margin-bottom:14px}
+  #card p{margin:0 0 16px;font-size:14px;line-height:1.55;color:var(--ink-dim)}
+  #card .go{display:inline-block;font:600 15px var(--display);color:var(--accent-ink);background:var(--accent);
+    border:none;border-radius:9px;padding:11px 22px;cursor:pointer}
+  #card .go:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+  #card .keys{margin-top:14px;font-family:var(--mono);font-size:11px;color:var(--ink-dim);line-height:1.8}
+  #card .keys b{color:var(--ink);font-weight:500}
+  #joy{position:absolute;z-index:6;left:26px;bottom:70px;width:112px;height:112px;border-radius:50%;
+    border:1.5px solid var(--panel-line);background:rgba(28,20,14,.35);display:none;touch-action:none}
+  #joy .stick{position:absolute;left:50%;top:50%;width:48px;height:48px;margin:-24px 0 0 -24px;border-radius:50%;
+    background:rgba(242,234,217,.28);border:1.5px solid rgba(242,234,217,.45)}
+  @media (max-width:760px){
+    #hints{display:none}
+    #brand .sub{display:none}
+    #brand h1{font-size:14px}
+  }
+</style>
+<div id="app">
+  <canvas id="c"></canvas>
+  <div id="brand" class="plate"><h1>The Walkable Kitchen</h1><div class="sub">5.32 m × 4.56 m · rebuilt from your sketch + photos</div></div>
+  <div id="chips" class="plate">
+    <button class="chip" id="chipPlan">Plan view<kbd>M</kbd></button>
+    <button class="chip" id="chipLabels">Labels<kbd>L</kbd></button>
+    <button class="chip" id="chipTape">Tape<kbd>T</kbd></button>
+    <button class="chip" id="chipFurn" data-on="1">Furniture<kbd>F</kbd></button>
+    <button class="chip" id="chipBuilt" data-on="1">Cabinets<kbd>B</kbd></button>
+  </div>
+  <div id="hints" class="plate"><b>WASD</b> walk &nbsp;·&nbsp; <b>mouse</b> look &nbsp;·&nbsp; <b>Shift</b> run &nbsp;·&nbsp; <b>M</b> plan &nbsp;·&nbsp; <b>T</b> tape measure &nbsp;·&nbsp; <b>R</b> reset</div>
+  <div id="pos" class="plate">x 0.00 · y 0.00 m</div>
+  <div id="measure" class="plate">tape: aim &amp; click the first point</div>
+  <div id="cross" hidden></div>
+  <div id="joy"><div class="stick"></div></div>
+  <div id="overlay">
+    <div id="card">
+      <h1>The Walkable Kitchen</h1>
+      <div class="dims">5.32 m × 4.56 m · every wall from your measurements</div>
+      <p>Your kitchen and dining room, rebuilt to scale so you can walk it while you plan the remodel. Strip out the furniture or the cabinets to see the bare shell, flip to plan view, and pull the tape measure on anything.</p>
+      <button class="go" id="goBtn">Click to walk in</button>
+      <div class="keys"><b>WASD</b> walk · <b>mouse</b> look · <b>Esc</b> release mouse<br>on touch: left pad walks, drag anywhere to look</div>
+    </div>
+  </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+'use strict';
+/* ============================================================
+   Layout — meters. x: east, z: south, y: up. Origin at NW corner.
+   Numbers traced from the hand sketch; they close to ±6 mm:
+     north  1.63 + 0.60 + 1.684 + 0.76 + 0.645 = 5.32
+     west   1.35 + 2.27 + 0.94               = 4.56
+     east   1.454 + 0.86 + 2.24              = 4.55
+     south  2.88 + 2.44                      = 5.32
+   ============================================================ */
+const ROOM = { w: 5.32, d: 4.56, h: 2.45 };
+const ENC  = { w: 1.63, d: 1.35 };                    // white boxed stair enclosure, NW corner
+const N_WINDOW = { from: 1.90, w: 1.40, sill: 1.10, head: 2.00 };
+const E_DOOR   = { from: 1.454, w: 0.86, h: 2.03 };   // light slab door, from NE corner going south
+const W_DOOR   = { from: 1.55, w: 0.87, h: 2.03 };    // dark exterior door, from NW going south
+const W_WINDOW = { from: 2.45, w: 1.17, sill: 0.78, head: 2.05 };
+const PART     = { from: 2.88, w: 2.44, h: 2.30 };    // folding partition on south wall, from SW going east
+const EYE = 1.60, WALL_T = 0.12;
+const SPAWN = { x: 3.70, z: 2.35, yaw: 0 };           // near the spot the panorama was shot from, facing the range
+
+/* ---------- renderer / scene ---------- */
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x171210);
+const camera = new THREE.PerspectiveCamera(66, 1, 0.05, 60);
+camera.rotation.order = 'YXZ';
+
+/* ---------- procedural textures ---------- */
+function canvasTex(size, draw, repeatX, repeatY) {
+  const cv = document.createElement('canvas'); cv.width = cv.height = size;
+  draw(cv.getContext('2d'), size);
+  const t = new THREE.CanvasTexture(cv);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  if (repeatX) t.repeat.set(repeatX, repeatY || repeatX);
+  t.encoding = THREE.sRGBEncoding;
+  t.anisotropy = 4;
+  return t;
+}
+function mulberry(seed){ return function(){ seed|=0; seed=seed+0x6D2B79F5|0; let t=Math.imul(seed^seed>>>15,1|seed); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+
+/* floor: 0.45 m travertine tiles, 2×2 per texture */
+const floorTex = canvasTex(512, (g, s) => {
+  const rnd = mulberry(7);
+  g.fillStyle = '#cfc0a8'; g.fillRect(0, 0, s, s);
+  for (let ty = 0; ty < 2; ty++) for (let tx = 0; tx < 2; tx++) {
+    const ox = tx * s / 2, oy = ty * s / 2, base = 196 + rnd() * 18;
+    g.fillStyle = `rgb(${base|0},${base - 14|0},${base - 34|0})`;
+    g.fillRect(ox + 2, oy + 2, s / 2 - 4, s / 2 - 4);
+    for (let i = 0; i < 130; i++) {
+      const v = 178 + rnd() * 52;
+      g.fillStyle = `rgba(${v|0},${v - 16|0},${v - 38|0},${0.10 + rnd() * 0.16})`;
+      g.beginPath(); g.ellipse(ox + rnd() * s / 2, oy + rnd() * s / 2, 2 + rnd() * 16, 1 + rnd() * 7, rnd() * 3, 0, 7); g.fill();
+    }
+  }
+  g.strokeStyle = 'rgba(120,105,84,.55)'; g.lineWidth = 3;
+  g.strokeRect(0, 0, s / 2, s / 2); g.strokeRect(s / 2, 0, s / 2, s / 2);
+  g.strokeRect(0, s / 2, s / 2, s / 2); g.strokeRect(s / 2, s / 2, s / 2, s / 2);
+});
+/* backsplash: 30 cm beige marble-ish tile */
+const splashTex = canvasTex(256, (g, s) => {
+  const rnd = mulberry(31);
+  g.fillStyle = '#ddd1bc'; g.fillRect(0, 0, s, s);
+  for (let i = 0; i < 60; i++) {
+    const v = 200 + rnd() * 34;
+    g.fillStyle = `rgba(${v|0},${v - 12|0},${v - 32|0},.18)`;
+    g.beginPath(); g.ellipse(rnd() * s, rnd() * s, 3 + rnd() * 22, 2 + rnd() * 8, rnd() * 3, 0, 7); g.fill();
+  }
+  g.strokeStyle = 'rgba(150,135,110,.6)'; g.lineWidth = 2; g.strokeRect(1, 1, s - 2, s - 2);
+});
+/* cabinet door: honey oak, arched raised panel + knob */
+function cabTexDraw(tone) { return (g, s) => {
+  const rnd = mulberry(101);
+  g.fillStyle = tone; g.fillRect(0, 0, s, s);
+  for (let i = 0; i < 90; i++) {                          // grain
+    g.strokeStyle = `rgba(60,36,14,${0.05 + rnd() * 0.08})`;
+    g.lineWidth = 1 + rnd() * 2;
+    g.beginPath(); const x = rnd() * s; g.moveTo(x, 0); g.bezierCurveTo(x + 8, s * .3, x - 8, s * .7, x + rnd() * 10 - 5, s); g.stroke();
+  }
+  const m = s * 0.14;                                     // arched panel
+  g.strokeStyle = 'rgba(50,28,8,.55)'; g.lineWidth = s * 0.035;
+  g.beginPath();
+  g.moveTo(m, s - m); g.lineTo(m, s * 0.34);
+  g.quadraticCurveTo(m, s * 0.20, s * 0.5, s * 0.17);
+  g.quadraticCurveTo(s - m, s * 0.20, s - m, s * 0.34);
+  g.lineTo(s - m, s - m); g.closePath(); g.stroke();
+  g.strokeStyle = 'rgba(255,225,170,.35)'; g.lineWidth = s * 0.012; g.stroke();
+  g.fillStyle = '#c8a24e'; g.beginPath(); g.arc(s * 0.86, s * 0.52, s * 0.030, 0, 7); g.fill();
+  g.fillStyle = 'rgba(60,32,4,.5)'; g.beginPath(); g.arc(s * 0.865, s * 0.527, s * 0.014, 0, 7); g.fill();
+}; }
+const cabTex = canvasTex(256, cabTexDraw('#9a6b3a'));
+const cabTexUp = canvasTex(256, cabTexDraw('#a5713c'));
+/* plain wood */
+function woodTexDraw(base, streak) { return (g, s) => {
+  const rnd = mulberry(55);
+  g.fillStyle = base; g.fillRect(0, 0, s, s);
+  for (let i = 0; i < 70; i++) {
+    g.strokeStyle = `rgba(${streak},${0.06 + rnd() * 0.1})`; g.lineWidth = 1 + rnd() * 3;
+    g.beginPath(); const x = rnd() * s; g.moveTo(x, 0); g.bezierCurveTo(x + 10, s * .4, x - 10, s * .6, x, s); g.stroke();
+  }
+}; }
+const woodTex = canvasTex(256, woodTexDraw('#9a6b3a', '55,32,12'));
+const woodDarkTex = canvasTex(256, woodTexDraw('#5b3a24', '30,16,6'));
+const parquetTex = canvasTex(256, (g, s) => {
+  const rnd = mulberry(77);
+  g.fillStyle = '#a97e4d'; g.fillRect(0, 0, s, s);
+  const n = 4, c = s / n;
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+    const horiz = (x + y) % 2 === 0;
+    for (let i = 0; i < 4; i++) {
+      const v = 140 + rnd() * 50;
+      g.fillStyle = `rgb(${v|0},${v * .68|0},${v * .4|0})`;
+      if (horiz) g.fillRect(x * c, y * c + i * c / 4 + 1, c, c / 4 - 2);
+      else g.fillRect(x * c + i * c / 4 + 1, y * c, c / 4 - 2, c);
+    }
+  }
+}, 6, 6);
+/* frosted floral glass for the folding doors */
+const frostTex = canvasTex(256, (g, s) => {
+  const rnd = mulberry(91);
+  g.fillStyle = 'rgba(238,240,238,1)'; g.fillRect(0, 0, s, s);
+  for (let i = 0; i < 400; i++) { g.fillStyle = `rgba(255,255,255,${rnd() * .5})`; g.fillRect(rnd() * s, rnd() * s, 2, 2); }
+  g.strokeStyle = 'rgba(140,150,145,.5)'; g.lineWidth = 2;
+  for (let i = 0; i < 5; i++) {                            // leaded floral hint
+    const x = s * (0.2 + rnd() * 0.6), y = s * (0.15 + rnd() * 0.7);
+    g.beginPath(); g.moveTo(x, y + 30); g.quadraticCurveTo(x - 14, y, x, y - 26); g.quadraticCurveTo(x + 14, y, x, y + 30); g.stroke();
+    g.beginPath(); g.moveTo(x, y + 30); g.quadraticCurveTo(x + 20, y + 44, x + 34, y + 34); g.stroke();
+  }
+});
+const blindsTex = canvasTex(256, (g, s) => {
+  for (let y = 0; y < s; y += 16) {
+    g.fillStyle = y % 32 ? '#e8e2d2' : '#b9b2a0';
+    g.fillRect(0, y, s, 16);
+  }
+});
+
+/* ---------- materials ---------- */
+const M = {
+  floor: new THREE.MeshLambertMaterial({ map: floorTex }),
+  ceil: new THREE.MeshLambertMaterial({ color: 0xf2efe7 }),
+  wall: new THREE.MeshLambertMaterial({ color: 0xece7db }),
+  wallDining: new THREE.MeshLambertMaterial({ color: 0xe6e2d8 }),
+  enc: new THREE.MeshLambertMaterial({ color: 0xf4f2ec }),
+  splash: new THREE.MeshLambertMaterial({ map: splashTex }),
+  counter: new THREE.MeshLambertMaterial({ color: 0xe8e1d0 }),
+  cab: new THREE.MeshLambertMaterial({ map: cabTex }),
+  cabUp: new THREE.MeshLambertMaterial({ map: cabTexUp }),
+  wood: new THREE.MeshLambertMaterial({ map: woodTex }),
+  woodBlond: new THREE.MeshLambertMaterial({ color: 0xc69f63 }),
+  woodDark: new THREE.MeshLambertMaterial({ map: woodDarkTex }),
+  plywood: new THREE.MeshLambertMaterial({ color: 0xb08d55 }),
+  steel: new THREE.MeshPhongMaterial({ color: 0xb9bcbf, specular: 0x666666, shininess: 60 }),
+  steelDark: new THREE.MeshPhongMaterial({ color: 0x8f9296, specular: 0x555555, shininess: 50 }),
+  black: new THREE.MeshPhongMaterial({ color: 0x1d1d1f, specular: 0x333333, shininess: 30 }),
+  blackMatte: new THREE.MeshLambertMaterial({ color: 0x232323 }),
+  hood: new THREE.MeshLambertMaterial({ color: 0xf0ead8 }),
+  glass: new THREE.MeshLambertMaterial({ color: 0xdfe8ea, transparent: true, opacity: 0.30 }),
+  frost: new THREE.MeshLambertMaterial({ map: frostTex, transparent: true, opacity: 0.88 }),
+  glow: new THREE.MeshBasicMaterial({ color: 0xfff3d8 }),
+  glowSoft: new THREE.MeshBasicMaterial({ color: 0xf3ead2 }),
+  blinds: new THREE.MeshBasicMaterial({ map: blindsTex }),
+  parquet: new THREE.MeshLambertMaterial({ map: parquetTex }),
+  brass: new THREE.MeshPhongMaterial({ color: 0xc8a24e, specular: 0x886622, shininess: 80 },),
+  blueMat: new THREE.MeshLambertMaterial({ color: 0x3a4f7a }),
+  seat: new THREE.MeshLambertMaterial({ color: 0xcfc2a8 }),
+  card: new THREE.MeshLambertMaterial({ color: 0xb98d54 }),
+  waterJug: new THREE.MeshLambertMaterial({ color: 0xcfe4ec, transparent: true, opacity: 0.5 }),
+  jugCap: new THREE.MeshLambertMaterial({ color: 0x2255bb }),
+  litter: new THREE.MeshLambertMaterial({ color: 0x9b9b98 }),
+  catWhite: new THREE.MeshLambertMaterial({ color: 0xf5f2ea }),
+  catBlack: new THREE.MeshLambertMaterial({ color: 0x1a1a1a }),
+  tan: new THREE.MeshLambertMaterial({ color: 0xc9b08a }),
+  alabaster: new THREE.MeshLambertMaterial({ color: 0xf5f0e2, emissive: 0x8a8172 }),
+};
+
+/* ---------- groups & collision ---------- */
+const shell = new THREE.Group();       // walls, doors, windows, partition, enclosure — always on
+const builtins = new THREE.Group();    // counters, uppers, appliances, hutch
+const furniture = new THREE.Group();   // loose furniture, clutter, cats
+const labels = new THREE.Group();      // dimension + name sprites
+const uppersG = new THREE.Group();     // subset of builtins hidden in plan view
+builtins.add(uppersG);
+scene.add(shell, builtins, furniture, labels);
+labels.visible = false;
+
+const solids = [];   // {minX,maxX,minZ,maxZ,group}
+function solid(minX, minZ, maxX, maxZ, group) { solids.push({ minX, minZ, maxX, maxZ, group: group || shell }); }
+
+function box(group, mat, w, h, d, cx, cy, cz, ry) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+  m.position.set(cx, cy, cz);
+  if (ry) m.rotation.y = ry;
+  m.castShadow = true; m.receiveShadow = true;
+  group.add(m); return m;
+}
+/* axis-aligned box from plan rect (x,z = min corner), auto-collide if tall */
+function pbox(group, mat, x, z, w, d, y0, y1, opts) {
+  const m = box(group, mat, w, y1 - y0, d, x + w / 2, (y0 + y1) / 2, z + d / 2);
+  if (!(opts && opts.noSolid) && y1 - y0 > 0.25 && y0 < 1.2) solid(x, z, x + w, z + d, group);
+  return m;
+}
+
+/* ---------- floor & ceiling ---------- */
+{
+  const f = new THREE.Mesh(new THREE.PlaneGeometry(ROOM.w, ROOM.d), M.floor);
+  floorTex.repeat.set(ROOM.w / 0.9, ROOM.d / 0.9);
+  f.rotation.x = -Math.PI / 2; f.position.set(ROOM.w / 2, 0, ROOM.d / 2);
+  f.receiveShadow = true; shell.add(f);
+  const c = new THREE.Mesh(new THREE.PlaneGeometry(ROOM.w, ROOM.d), M.ceil);
+  c.rotation.x = Math.PI / 2; c.position.set(ROOM.w / 2, ROOM.h, ROOM.d / 2);
+  c.name = 'ceiling'; shell.add(c);
+}
+
+/* ---------- walls with openings ----------
+   buildWall lays segments along a local axis u∈[0,len].
+   openings: {from,w,sill(=0 doors),head} */
+function buildWall(group, mat, len, openings, place) {
+  // place(u0,u1,y0,y1) -> adds a box in world space
+  const ops = (openings || []).slice().sort((a, b) => a.from - b.from);
+  let u = 0;
+  for (const o of ops) {
+    if (o.from > u) place(u, o.from, 0, ROOM.h);
+    if ((o.sill || 0) > 0) place(o.from, o.from + o.w, 0, o.sill);
+    if (o.head < ROOM.h) place(o.from, o.from + o.w, o.head, ROOM.h);
+    u = o.from + o.w;
+  }
+  if (u < len - 0.001) place(u, len, 0, ROOM.h);
+}
+function wallX(group, mat, z, sign, len, openings) {  // wall along x at plan z; sign: -1 wall extends to -z (north wall)
+  buildWall(group, mat, len, openings, (u0, u1, y0, y1) => {
+    box(group, mat, u1 - u0, y1 - y0, WALL_T, (u0 + u1) / 2, (y0 + y1) / 2, z + sign * WALL_T / 2);
+  });
+  solid(-WALL_T, z + Math.min(0, sign * WALL_T), len + WALL_T, z + Math.max(0, sign * WALL_T));
+}
+function wallZ(group, mat, x, sign, len, openings) {  // wall along z at plan x
+  buildWall(group, mat, len, openings, (u0, u1, y0, y1) => {
+    box(group, mat, WALL_T, y1 - y0, u1 - u0, x + sign * WALL_T / 2, (y0 + y1) / 2, (u0 + u1) / 2);
+  });
+  solid(x + Math.min(0, sign * WALL_T), -WALL_T, x + Math.max(0, sign * WALL_T), len + WALL_T);
+}
+
+wallX(shell, M.wall, 0, -1, ROOM.w, [{ from: N_WINDOW.from, w: N_WINDOW.w, sill: N_WINDOW.sill, head: N_WINDOW.head }]);
+wallZ(shell, M.wall, ROOM.w, 1, ROOM.d, [{ from: E_DOOR.from, w: E_DOOR.w, sill: 0, head: E_DOOR.h }]);
+wallX(shell, M.wallDining, ROOM.d, 1, ROOM.w, [{ from: PART.from, w: PART.w, sill: 0, head: PART.h }]);
+wallZ(shell, M.wallDining, 0, -1, ROOM.d, [
+  { from: W_DOOR.from, w: W_DOOR.w, sill: 0, head: W_DOOR.h },
+  { from: W_WINDOW.from, w: W_WINDOW.w, sill: W_WINDOW.sill, head: W_WINDOW.head },
+]);
+
+/* ---------- windows ---------- */
+function windowUnit(cx, cy, cz, w, h, ry) {
+  const g = new THREE.Group();
+  const frame = 0.05;
+  const fm = M.blackMatte;
+  box(g, fm, w + 0.08, frame, 0.08, 0, h / 2 + frame / 2, 0);
+  box(g, fm, w + 0.08, frame, 0.08, 0, -h / 2 - frame / 2, 0);
+  box(g, fm, frame, h, 0.08, -w / 2 - frame / 2, 0, 0);
+  box(g, fm, frame, h, 0.08, w / 2 + frame / 2, 0, 0);
+  box(g, fm, frame * 0.7, h, 0.05, 0, 0, 0);                       // slider mullion
+  const glass = new THREE.Mesh(new THREE.PlaneGeometry(w, h), M.glass);
+  g.add(glass);
+  const glow = new THREE.Mesh(new THREE.PlaneGeometry(w * 1.7, h * 1.7), M.glow);
+  glow.position.z = -0.45; g.add(glow);
+  g.position.set(cx, cy, cz); if (ry) g.rotation.y = ry;
+  shell.add(g);
+}
+windowUnit(N_WINDOW.from + N_WINDOW.w / 2, (N_WINDOW.sill + N_WINDOW.head) / 2, 0.001, N_WINDOW.w, N_WINDOW.head - N_WINDOW.sill, 0);
+windowUnit(0.001, (W_WINDOW.sill + W_WINDOW.head) / 2, W_WINDOW.from + W_WINDOW.w / 2, W_WINDOW.w, W_WINDOW.head - W_WINDOW.sill, Math.PI / 2);
+/* window sill ledge over the dining window */
+box(shell, M.wall, 0.14, 0.04, W_WINDOW.w + 0.1, 0.07, W_WINDOW.sill, W_WINDOW.from + W_WINDOW.w / 2);
+
+/* ---------- doors ---------- */
+const doorPanelTex = canvasTex(256, (g, s) => {
+  g.fillStyle = '#462c1b'; g.fillRect(0, 0, s, s);
+  const rnd = mulberry(13);
+  for (let i = 0; i < 50; i++) { g.strokeStyle = `rgba(20,10,4,${.1 + rnd() * .1})`; g.beginPath(); const x = rnd() * s; g.moveTo(x, 0); g.lineTo(x + rnd() * 8 - 4, s); g.stroke(); }
+  g.strokeStyle = 'rgba(16,8,2,.7)'; g.lineWidth = 5;
+  const px = [s * .12, s * .55], pw = s * .33, py = [s * .06, s * .40, s * .72], ph = [s * .28, s * .26, s * .22];
+  for (const x of px) for (let i = 0; i < 3; i++) g.strokeRect(x, py[i], pw, ph[i]);
+});
+function doorUnit(mat, cx, cy, cz, w, h, ry, knobSide) {
+  const g = new THREE.Group();
+  const slab = box(g, mat, w, h, 0.045, 0, 0, 0);
+  const knob = new THREE.Mesh(new THREE.SphereGeometry(0.035, 10, 8), M.brass);
+  knob.position.set(knobSide * (w / 2 - 0.07), -h * 0.02, 0.05); g.add(knob);
+  box(g, M.woodDark, w + 0.12, 0.06, 0.1, 0, h / 2 + 0.03, 0);     // casing head
+  g.position.set(cx, cy, cz); if (ry) g.rotation.y = ry;
+  shell.add(g); return g;
+}
+doorUnit(new THREE.MeshLambertMaterial({ map: doorPanelTex }), 0.035, W_DOOR.h / 2, W_DOOR.from + W_DOOR.w / 2, W_DOOR.w, W_DOOR.h, Math.PI / 2, 1);
+doorUnit(M.woodBlond, ROOM.w - 0.035, E_DOOR.h / 2, E_DOOR.from + E_DOOR.w / 2, E_DOOR.w, E_DOOR.h, Math.PI / 2, -1);
+
+/* ---------- folding partition (south wall) ---------- */
+{
+  const px0 = PART.from, h = PART.h, z = ROOM.d - 0.045;
+  function leaf(w, cx, cz, ry) {
+    const g = new THREE.Group();
+    box(g, M.woodDark, w, h, 0.05, 0, h / 2, 0);
+    const gl = new THREE.Mesh(new THREE.PlaneGeometry(w * 0.72, h * 0.52), M.frost);
+    gl.position.set(0, h * 0.66, 0.03); g.add(gl);
+    const gl2 = gl.clone(); gl2.rotation.y = Math.PI; gl2.position.z = -0.03; g.add(gl2);
+    g.position.set(cx, 0, cz); if (ry) g.rotation.y = ry;
+    shell.add(g); return g;
+  }
+  // fixed west pair (closed flat), folded stack, open gap, fixed east pair
+  leaf(0.70, px0 + 0.35, z, 0);  solid(px0, ROOM.d - 0.1, px0 + 0.70, ROOM.d);
+  leaf(0.36, px0 + 0.70 + 0.13, z - 0.14, Math.PI / 4.2);          // folded leaves poking into the room
+  leaf(0.36, px0 + 0.70 + 0.30, z - 0.13, -Math.PI / 4.6);
+  solid(px0 + 0.66, ROOM.d - 0.32, px0 + 1.06, ROOM.d);
+  const gapEast = px0 + 1.82;                                       // ~0.8 m walkable gap
+  leaf(0.62, gapEast + 0.31, z, 0); solid(gapEast, ROOM.d - 0.1, ROOM.w, ROOM.d);
+  // living room beyond
+  const LR = { x0: 1.9, x1: 5.9, z0: ROOM.d + WALL_T, z1: ROOM.d + 3.1 };
+  const lf = new THREE.Mesh(new THREE.PlaneGeometry(LR.x1 - LR.x0, LR.z1 - LR.z0), M.parquet);
+  lf.rotation.x = -Math.PI / 2; lf.position.set((LR.x0 + LR.x1) / 2, 0, (LR.z0 + LR.z1) / 2);
+  lf.receiveShadow = true; shell.add(lf);
+  const lc = lf.clone(); lc.material = M.ceil; lc.rotation.x = Math.PI / 2; lc.position.y = ROOM.h; shell.add(lc);
+  box(shell, M.wallDining, LR.x1 - LR.x0, ROOM.h, WALL_T, (LR.x0 + LR.x1) / 2, ROOM.h / 2, LR.z1 + WALL_T / 2);
+  box(shell, M.wallDining, WALL_T, ROOM.h, LR.z1 - LR.z0, LR.x0 - WALL_T / 2, ROOM.h / 2, (LR.z0 + LR.z1) / 2);
+  box(shell, M.wallDining, WALL_T, ROOM.h, LR.z1 - LR.z0, LR.x1 + WALL_T / 2, ROOM.h / 2, (LR.z0 + LR.z1) / 2);
+  solid(LR.x0 - 0.2, LR.z0, LR.x0, LR.z1); solid(LR.x1, LR.z0, LR.x1 + 0.2, LR.z1); solid(LR.x0, LR.z1, LR.x1, LR.z1 + 0.2);
+  const win = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 1.7), M.blinds);
+  win.rotation.y = Math.PI; win.position.set(3.9, 1.5, LR.z1 - 0.01); shell.add(win);
+  // cat tree silhouette
+  const ct = new THREE.Group();
+  box(ct, M.tan, 0.5, 0.04, 0.5, 0, 0.02, 0);
+  for (let i = 0; i < 3; i++) { const p = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.5, 8), M.tan); p.position.set(i * 0.14 - 0.14, 0.3 + i * 0.28, 0); ct.add(p); box(ct, M.tan, 0.36, 0.04, 0.3, i * 0.14 - 0.14, 0.56 + i * 0.28, 0); }
+  ct.position.set(5.2, 0, ROOM.d + 2.2); shell.add(ct);
+  const dimLight = new THREE.PointLight(0xffe8c8, 0.5, 6, 2);
+  dimLight.position.set(3.9, 2.1, ROOM.d + 1.6); scene.add(dimLight);
+}
+
+/* ---------- stair enclosure (NW) ---------- */
+{
+  box(shell, M.enc, 0.80, 2.10, ENC.d, 0.40, 1.05, ENC.d / 2);
+  box(shell, M.enc, 0.83, 1.62, ENC.d, 1.215, 0.81, ENC.d / 2);
+  const slope = box(shell, M.enc, 0.62, 0.10, ENC.d, 1.02, 1.92, ENC.d / 2);
+  slope.rotation.z = -0.65;
+  solid(0, 0, ENC.w, ENC.d);
+  // beige tile wainscot on its east face (behind peninsula)
+  const w = new THREE.Mesh(new THREE.PlaneGeometry(ENC.d, 0.62), M.splash);
+  w.rotation.y = Math.PI / 2; w.position.set(ENC.w + 0.005, 1.0, ENC.d / 2); shell.add(w);
+  // TV above, angled toward the table
+  const tv = new THREE.Group();
+  box(tv, M.black, 0.56, 0.36, 0.05, 0, 0, 0);
+  box(tv, M.blackMatte, 0.1, 0.12, 0.06, 0, -0.22, 0);
+  tv.position.set(1.28, 2.16, 0.30); tv.rotation.y = -0.5; shell.add(tv);
+}
+
+/* ---------- ceiling lights ---------- */
+{
+  const pend = new THREE.Group();                                   // bowl pendant over dining
+  const chain = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.42, 6), M.brass);
+  chain.position.y = ROOM.h - 0.21; pend.add(chain);
+  const bowl = new THREE.Mesh(new THREE.SphereGeometry(0.17, 16, 10, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), M.alabaster);
+  bowl.position.y = ROOM.h - 0.45; pend.add(bowl);
+  pend.position.set(1.30, 0, 2.30); shell.add(pend);
+  const dome = new THREE.Group();                                   // semi-flush dome near partition
+  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.14, 6), M.brass);
+  stem.position.y = ROOM.h - 0.07; dome.add(stem);
+  const db = new THREE.Mesh(new THREE.SphereGeometry(0.15, 16, 10, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), M.alabaster);
+  db.position.y = ROOM.h - 0.16; dome.add(db);
+  dome.position.set(3.85, 0, 3.95); shell.add(dome);
+}
+
+/* ---------- lighting ---------- */
+scene.add(new THREE.HemisphereLight(0xfff4e0, 0x8a7a60, 0.55));
+const sun = new THREE.DirectionalLight(0xfff1d8, 0.5);
+sun.position.set(2.5, 3.4, -2.2); sun.target.position.set(2.6, 0, 2.2);
+scene.add(sun, sun.target);
+const westGlow = new THREE.DirectionalLight(0xfef0da, 0.35);
+westGlow.position.set(-2.5, 2.6, 3.0); westGlow.target.position.set(1.5, 0, 3.0);
+scene.add(westGlow, westGlow.target);
+const roomLight = new THREE.PointLight(0xffe9c9, 0.65, 12, 2);
+roomLight.position.set(2.6, 2.25, 2.4);
+roomLight.castShadow = true; roomLight.shadow.mapSize.set(1024, 1024); roomLight.shadow.bias = -0.004;
+scene.add(roomLight);
+const pendLight = new THREE.PointLight(0xffe4b8, 0.45, 5, 2); pendLight.position.set(1.3, 1.85, 2.3); scene.add(pendLight);
+
+/* ============================================================
+   BUILT-INS
+   ============================================================ */
+const CT = 0.90, CD = 0.62;   // counter height/depth
+function counterRun(x, z, w, d, mats) {
+  pbox(builtins, mats || M.cab, x + 0.02, z + 0.02, w - 0.04, d - 0.04, 0, CT - 0.04);   // base cabinets
+  pbox(builtins, M.counter, x, z, w, d + 0.025, CT - 0.04, CT, { noSolid: true });        // top slab w/ nose
+  solid(x, z, x + w, z + d + 0.03, builtins);
+}
+/* north run: enclosure edge → stove */
+counterRun(ENC.w, 0, 3.91 - ENC.w, CD);
+/* peninsula leg along enclosure face (sink leg: 1503 mm total from north wall) */
+counterRun(ENC.w, CD, 0.60, 1.503 - CD);
+{ // exposed plywood south end panel
+  const p = new THREE.Mesh(new THREE.PlaneGeometry(0.60, CT), M.plywood);
+  p.position.set(ENC.w + 0.30, CT / 2, 1.503 + 0.001); builtins.add(p);
+}
+/* 645 mm cabinet east of the stove */
+counterRun(4.67, 0, ROOM.w - 4.67, CD);
+/* backsplash: north wall + above peninsula lip */
+{
+  const s = new THREE.Mesh(new THREE.PlaneGeometry(ROOM.w - ENC.w, 0.55), M.splash);
+  splashTex.repeat.set((ROOM.w - ENC.w) / 0.3, 0.55 / 0.3);
+  s.position.set(ENC.w + (ROOM.w - ENC.w) / 2, CT + 0.275, 0.005); builtins.add(s);
+}
+/* double sink in the corner */
+{
+  const sk = new THREE.Group();
+  const rim = box(sk, M.steel, 0.84, 0.02, 0.5, 0, CT + 0.005, 0);
+  rim.receiveShadow = true;
+  box(sk, new THREE.MeshPhongMaterial({ color: 0x74777b, shininess: 70 }), 0.36, 0.16, 0.4, -0.21, CT - 0.08, 0);
+  box(sk, new THREE.MeshPhongMaterial({ color: 0x74777b, shininess: 70 }), 0.36, 0.16, 0.4, 0.21, CT - 0.08, 0);
+  const fbase = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.035, 0.06, 10), M.steel);
+  fbase.position.set(0, CT + 0.03, -0.19); sk.add(fbase);
+  const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.30, 8), M.steel);
+  neck.position.set(0, CT + 0.20, -0.19); sk.add(neck);
+  const arc = new THREE.Mesh(new THREE.TorusGeometry(0.11, 0.013, 8, 12, Math.PI * 0.85), M.steel);
+  arc.position.set(0, CT + 0.35, -0.19); arc.rotation.y = Math.PI / 2; sk.add(arc);
+  sk.position.set(2.18, 0, 0.30); builtins.add(sk);
+}
+/* microwave on shelf left of stove */
+box(builtins, M.cabUp, 0.56, 0.03, 0.38, 3.62, 1.04, 0.20);
+{
+  const mw = box(builtins, M.black, 0.52, 0.30, 0.36, 3.62, 1.21, 0.20);
+  box(builtins, M.steel, 0.05, 0.30, 0.005, 3.62 + 0.21, 1.21, 0.385);
+}
+/* range */
+{
+  const st = new THREE.Group();
+  box(st, M.steel, 0.76, 0.60, 0.64, 0, 0.55, 0);                  // oven body
+  box(st, M.black, 0.76, 0.06, 0.64, 0, 0.88, 0);                  // cooktop
+  box(st, M.black, 0.76, 0.32, 0.08, 0, 1.06, -0.28);              // backguard
+  box(st, M.blackMatte, 0.55, 0.28, 0.02, 0, 0.55, 0.325);         // oven window
+  box(st, M.steel, 0.68, 0.03, 0.03, 0, 0.74, 0.33);               // handle
+  for (const [gx, gz] of [[-0.2, -0.14], [0.2, -0.14], [-0.2, 0.16], [0.2, 0.16]]) {
+    const b = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.015, 12), M.blackMatte);
+    b.position.set(gx, 0.918, gz); st.add(b);
+  }
+  const pan = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.11, 0.03, 14), M.blackMatte);
+  pan.position.set(-0.2, 0.94, -0.14); st.add(pan);
+  st.position.set(3.91 + 0.38, 0, 0.33); builtins.add(st);
+  solid(3.91, 0, 4.67, 0.66, builtins);
+}
+/* hood */
+box(builtins, M.hood, 0.78, 0.22, 0.48, 4.29, 1.73, 0.26);
+/* upper cabinets — north (east of window to corner, skipping hood face) */
+function uppers(x, z, w, y0, y1, d, ry) {
+  const u = box(uppersG, M.cabUp, w, y1 - y0, d, 0, 0, 0);
+  const face = new THREE.Mesh(new THREE.PlaneGeometry(w, y1 - y0), M.cabUp);
+  // texture repeats one arch per ~0.45 m of door
+  const t = cabTexUp.clone(); t.needsUpdate = true; t.repeat.set(Math.max(1, Math.round(w / 0.45)), 1);
+  face.material = new THREE.MeshLambertMaterial({ map: t });
+  face.position.z = d / 2 + 0.001; u.add(face);
+  u.position.set(x + w / 2, (y0 + y1) / 2, z + d / 2);
+  if (ry) { u.rotation.y = ry; u.position.set(x, (y0 + y1) / 2, z); }
+  return u;
+}
+uppers(N_WINDOW.from + N_WINDOW.w + 0.05, 0, 3.91 - (N_WINDOW.from + N_WINDOW.w + 0.05), 1.45, 2.35, 0.33);
+uppers(3.91, 0, 0.76, 1.95, 2.35, 0.33);                            // over hood
+uppers(4.67, 0, ROOM.w - 4.67, 1.45, 2.35, 0.33);
+uppers(ENC.w, 0, N_WINDOW.from - ENC.w - 0.02, 1.45, 2.35, 0.33);   // small run west of window
+/* quarter-round open corner shelves at NE */
+for (const y of [1.30, 1.62, 1.94]) {
+  const q = new THREE.Mesh(new THREE.CylinderGeometry(0.30, 0.30, 0.025, 14, 1, false, -Math.PI / 2, Math.PI / 2), M.wood);
+  q.position.set(ROOM.w - 0.01, y, 0.01); uppersG.add(q);
+}
+/* east-wall high cabinet over the pier */
+{
+  const u = box(uppersG, M.cabUp, 0.33, 0.45, 1.1, ROOM.w - 0.165, 2.22, 2.05);
+}
+/* fridge + uppers above */
+{
+  const fr = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.BoxGeometry(0.91, 1.78, 0.75),
+    [M.blackMatte, M.blackMatte, M.steel, M.steel, M.steel, M.steelDark].map(m => m)); // px,nx,py,ny,pz,nz
+  body.position.y = 0.89; body.castShadow = true; fr.add(body);
+  box(fr, M.steelDark, 0.89, 0.015, 0.74, 0, 1.10, 0.01);           // freezer split line
+  const h1 = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.5, 8), M.steelDark);
+  h1.position.set(-0.1, 1.4, 0.39); fr.add(h1);
+  const h2 = h1.clone(); h2.position.x = 0.1; fr.add(h2);
+  const h3 = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.5, 8), M.steelDark);
+  h3.rotation.z = Math.PI / 2; h3.position.set(0, 0.82, 0.39); fr.add(h3);
+  box(fr, M.card, 0.7, 0.22, 0.5, 0, 1.9, 0);                       // baskets/boxes on top
+  fr.position.set(2.055, 0, ROOM.d - 0.375); fr.rotation.y = Math.PI;  // faces north
+  builtins.add(fr);
+  solid(1.60, ROOM.d - 0.75, 2.51, ROOM.d, builtins);
+  uppers(1.60, ROOM.d - 0.35, 0.91, 1.92, 2.40, 0.35).rotation.y = Math.PI;
+}
+/* white column between fridge and partition */
+box(shell, M.wallDining, 0.37, ROOM.h, 0.10, 2.695, ROOM.h / 2, ROOM.d - 0.05);
+/* hutch/buffet on east wall by the partition */
+{
+  const hz0 = 3.30, hz1 = 4.47, hx = ROOM.w - 0.55;
+  pbox(builtins, M.cab, hx, hz0, 0.55, hz1 - hz0, 0, 0.86);
+  pbox(builtins, M.counter, hx - 0.02, hz0, 0.57, hz1 - hz0, 0.86, 0.90, { noSolid: true });
+  pbox(builtins, M.cabUp, hx + 0.22, hz0, 0.33, hz1 - hz0, 1.32, 2.10, { noSolid: true });
+  box(builtins, M.wood, 0.33, 0.03, hz1 - hz0, ROOM.w - 0.165, 1.32, (hz0 + hz1) / 2); // open shelf
+  const to = box(builtins, M.steel, 0.42, 0.26, 0.34, hx + 0.24, 1.04, 3.62);          // toaster oven
+  box(builtins, M.black, 0.38, 0.2, 0.01, hx + 0.24, 1.03, 3.62 + 0.175);
+}
+/* tall glass display cabinet (furniture-ish but against wall) */
+{
+  const dx = ROOM.w - 0.5, dz = 2.60;
+  pbox(furniture, M.woodDark, dx, dz, 0.5, 0.45, 0, 1.75);
+  const gl = new THREE.Mesh(new THREE.PlaneGeometry(0.34, 0.9), M.frost);
+  gl.rotation.y = -Math.PI / 2; gl.position.set(dx - 0.005, 1.2, dz + 0.225); furniture.add(gl);
+  box(furniture, M.blackMatte, 0.3, 0.12, 0.2, dx + 0.25, 1.81, dz + 0.225);           // boombox on top
+}
+/* folded tray tables leaning on east wall */
+{
+  const t1 = box(furniture, M.woodDark, 0.04, 0.78, 0.42, ROOM.w - 0.09, 0.39, 2.28);
+  t1.rotation.z = 0.12;
+  const t2 = box(furniture, M.blackMatte, 0.03, 0.72, 0.4, ROOM.w - 0.14, 0.36, 2.3);
+  t2.rotation.z = 0.16;
+}
+
+/* ============================================================
+   FURNITURE / LOOSE
+   ============================================================ */
+/* dining table under west window */
+{
+  const t = new THREE.Group();
+  box(t, M.wood, 0.80, 0.05, 1.25, 0, 0.725, 0);
+  const mat = new THREE.Mesh(new THREE.PlaneGeometry(0.68, 1.1), M.blueMat);
+  mat.rotation.x = -Math.PI / 2; mat.position.y = 0.7551; t.add(mat);
+  box(t, M.woodDark, 0.08, 0.62, 0.08, 0, 0.36, 0);
+  box(t, M.woodDark, 0.5, 0.05, 0.5, 0, 0.06, 0);
+  t.position.set(0.44, 0, 3.14); furniture.add(t);
+  solid(0.04, 2.5, 0.84, 3.76, furniture);
+}
+function chair(cx, cz, ry, mat) {
+  const g = new THREE.Group();
+  box(g, mat || M.woodDark, 0.42, 0.05, 0.42, 0, 0.45, 0);
+  const cushion = box(g, M.seat, 0.38, 0.05, 0.36, 0, 0.49, 0.01);
+  for (const [lx, lz] of [[-0.18, -0.18], [0.18, -0.18], [-0.18, 0.18], [0.18, 0.18]]) {
+    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.016, 0.45, 6), mat || M.woodDark);
+    leg.position.set(lx, 0.225, lz); g.add(leg);
+  }
+  box(g, mat || M.woodDark, 0.05, 0.5, 0.04, -0.185, 0.72, -0.19);
+  box(g, mat || M.woodDark, 0.05, 0.5, 0.04, 0.185, 0.72, -0.19);
+  box(g, mat || M.woodDark, 0.42, 0.07, 0.04, 0, 0.94, -0.19);
+  box(g, mat || M.woodDark, 0.3, 0.05, 0.03, 0, 0.7, -0.19);
+  g.position.set(cx, 0, cz); g.rotation.y = ry;
+  furniture.add(g);
+  solid(cx - 0.24, cz - 0.24, cx + 0.24, cz + 0.24, furniture);
+  return g;
+}
+chair(1.06, 2.82, Math.PI / 2);        // facing table/window
+chair(1.06, 3.42, Math.PI / 2);
+chair(1.45, 3.30, -Math.PI / 2, M.seat);     // pale spare chair
+chair(0.55, 4.20, 0, M.seat);                // white chair in SW corner
+/* litter box */
+{
+  const g = new THREE.Group();
+  box(g, M.litter, 0.55, 0.42, 0.46, 0, 0.23, 0);
+  box(g, new THREE.MeshLambertMaterial({ color: 0xd8a8b8 }), 0.55, 0.06, 0.46, 0, 0.03, 0);
+  box(g, new THREE.MeshLambertMaterial({ color: 0x777774 }), 0.2, 0.18, 0.02, 0, 0.2, 0.23);
+  g.position.set(1.22, 0, ROOM.d - 0.28); furniture.add(g);
+  solid(0.95, ROOM.d - 0.52, 1.5, ROOM.d, furniture);
+}
+/* folding side table + water jugs */
+{
+  box(furniture, M.woodDark, 0.5, 0.04, 0.38, 1.93, 0.64, 1.80);
+  box(furniture, M.woodDark, 0.04, 0.62, 0.3, 1.75, 0.31, 1.80);
+  box(furniture, M.woodDark, 0.04, 0.62, 0.3, 2.11, 0.31, 1.80);
+  solid(1.68, 1.6, 2.18, 2.0, furniture);
+  function jug(x, y, z) {
+    const b = new THREE.Mesh(new THREE.CylinderGeometry(0.115, 0.125, 0.42, 10), M.waterJug);
+    b.position.set(x, y + 0.21, z); furniture.add(b);
+    const c = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.06, 8), M.jugCap);
+    c.position.set(x, y + 0.45, z); furniture.add(c);
+  }
+  jug(1.85, 0.66, 1.74); jug(2.05, 0.66, 1.86);
+  jug(1.78, 0, 2.12); jug(2.6, 0, 0.75);
+}
+/* moving boxes mid-floor */
+{
+  const b1 = box(furniture, M.card, 0.55, 0.5, 0.45, 2.5, 0.25, 3.3); b1.rotation.y = 0.3;
+  const b2 = box(furniture, M.card, 0.45, 0.35, 0.4, 2.95, 0.175, 3.05); b2.rotation.y = -0.2;
+  const b3 = box(furniture, M.card, 0.4, 0.25, 0.35, 2.6, 0.125, 2.8); b3.rotation.y = 0.7;
+  solid(2.25, 2.7, 3.2, 3.6, furniture);
+}
+/* counter clutter: coffee maker, knife block, spices, air fryer */
+{
+  box(furniture, M.black, 0.30, 0.38, 0.30, ENC.w + 0.3, CT + 0.19, 1.05);            // coffee maker
+  box(furniture, M.steel, 0.1, 0.28, 0.24, ENC.w + 0.38, CT + 0.14, 1.05);
+  const kb = box(furniture, M.wood, 0.1, 0.2, 0.16, 4.78, CT + 0.1, 0.3); kb.rotation.z = 0.18;  // knife block
+  const sp = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.26, 10), M.steel);
+  sp.position.set(4.95, CT + 0.13, 0.25); furniture.add(sp);                          // spice carousel
+  box(furniture, M.black, 0.26, 0.3, 0.28, 5.14, CT + 0.15, 0.38);                    // air fryer
+  const wr = box(furniture, new THREE.MeshLambertMaterial({ color: 0xf0f0ee }), 0.34, 0.08, 0.3, 1.85, CT + 0.04, 0.32); // dish rack
+}
+/* cat bowls, fountain, food plate */
+{
+  const bowl = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.07, 0.05, 10), M.steel);
+  bowl.position.set(2.62, 0.025, ROOM.d - 0.18); furniture.add(bowl);
+  const fount = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.11, 0.16, 10), M.steel);
+  fount.position.set(4.62, 0.08, 3.22); furniture.add(fount);
+  const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.02, 12), M.blackMatte);
+  plate.position.set(1.9, 0.01, 3.42); furniture.add(plate);
+}
+/* cats */
+function cat(mat, x, y, z, ry, lying) {
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.SphereGeometry(0.13, 12, 10), mat);
+  if (lying) { body.scale.set(1.5, 0.75, 0.95); body.position.y = 0.10; }
+  else { body.scale.set(1.0, 1.5, 0.9); body.position.y = 0.16; }
+  g.add(body);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.075, 10, 8), mat);
+  head.position.set(lying ? 0.17 : 0.02, lying ? 0.16 : 0.33, 0); g.add(head);
+  for (const s of [-1, 1]) {
+    const ear = new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.05, 6), mat);
+    ear.position.set(head.position.x + 0.01, head.position.y + 0.07, s * 0.04); g.add(ear);
+  }
+  const tail = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.008, 0.28, 6), mat);
+  tail.position.set(lying ? -0.2 : -0.1, lying ? 0.1 : 0.12, 0.06);
+  tail.rotation.z = lying ? 1.2 : 0.5; tail.rotation.x = 0.4; g.add(tail);
+  g.position.set(x, y, z); g.rotation.y = ry;
+  furniture.add(g); return g;
+}
+cat(M.catWhite, 0.5, 0.755, 2.85, 0.4, true);       // white cat on the table
+cat(M.catBlack, 4.0, 0, 4.15, Math.PI, false);      // black cat by the folding doors
+
+/* ============================================================
+   LABELS
+   ============================================================ */
+function makeLabel(text, x, y, z, small) {
+  const pad = 18, fs = small ? 26 : 32;
+  const cv = document.createElement('canvas');
+  const g0 = cv.getContext('2d');
+  g0.font = `500 ${fs}px 'IBM Plex Mono', monospace`;
+  const tw = g0.measureText(text).width;
+  cv.width = Math.ceil(tw + pad * 2); cv.height = fs + pad * 1.4;
+  const g = cv.getContext('2d');
+  g.font = `500 ${fs}px 'IBM Plex Mono', monospace`;
+  const r = 12;
+  g.fillStyle = 'rgba(28,20,14,.88)';
+  g.beginPath();
+  g.moveTo(r, 0); g.lineTo(cv.width - r, 0); g.quadraticCurveTo(cv.width, 0, cv.width, r);
+  g.lineTo(cv.width, cv.height - r); g.quadraticCurveTo(cv.width, cv.height, cv.width - r, cv.height);
+  g.lineTo(r, cv.height); g.quadraticCurveTo(0, cv.height, 0, cv.height - r);
+  g.lineTo(0, r); g.quadraticCurveTo(0, 0, r, 0); g.fill();
+  g.strokeStyle = 'rgba(217,142,74,.7)'; g.lineWidth = 2; g.stroke();
+  g.fillStyle = '#f2ead9'; g.textBaseline = 'middle';
+  g.fillText(text, pad, cv.height / 2 + 2);
+  const t = new THREE.CanvasTexture(cv); t.encoding = THREE.sRGBEncoding;
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, depthTest: false }));
+  const k = small ? 0.0022 : 0.0026;
+  sp.scale.set(cv.width * k, cv.height * k, 1);
+  sp.position.set(x, y, z); sp.renderOrder = 5;
+  labels.add(sp); return sp;
+}
+/* the sketch's own numbers, hung where they were measured */
+makeLabel('1684 mm', (2.23 + 3.91) / 2, 1.32, 0.35);
+makeLabel('645 mm', 5.0, 1.32, 0.35);
+makeLabel('sink · 1503 mm', 2.0, 1.25, 1.1);
+makeLabel('1454 mm', ROOM.w - 0.3, 1.5, 0.75);
+makeLabel('2.24 m', ROOM.w - 0.3, 1.5, 3.4);
+makeLabel('2.88 m', 1.45, 1.5, ROOM.d - 0.3);
+makeLabel('folding doors · 2.44 m', 4.1, 1.6, ROOM.d - 0.35);
+makeLabel('2.27 m', 0.3, 1.5, 2.5);
+makeLabel('94 cm', 0.3, 1.4, 4.1);
+makeLabel('room 5.32 × 4.56 m', 2.66, 2.1, 2.4);
+/* names */
+makeLabel('stove', 4.29, 1.05, 0.5, true);
+makeLabel('microwave', 3.62, 1.5, 0.5, true);
+makeLabel('double sink', 2.18, 1.05, 0.6, true);
+makeLabel('coffee counter', 1.95, 1.05, 1.2, true);
+makeLabel('stairs box', 0.8, 1.7, 0.7, true);
+makeLabel('fridge', 2.05, 2.0, ROOM.d - 0.55, true);
+makeLabel('hutch', ROOM.w - 0.7, 1.5, 3.9, true);
+makeLabel('pantry door', ROOM.w - 0.25, 1.7, E_DOOR.from + E_DOOR.w / 2, true);
+makeLabel('exterior door', 0.25, 1.7, W_DOOR.from + W_DOOR.w / 2, true);
+makeLabel('to living room →', 4.55, 1.75, ROOM.d - 0.3, true);
+makeLabel('table', 0.44, 1.1, 3.14, true);
+
+/* ============================================================
+   CONTROLS
+   ============================================================ */
+const state = {
+  yaw: SPAWN.yaw, pitch: 0,
+  pos: new THREE.Vector3(SPAWN.x, EYE, SPAWN.z),
+  keys: {}, locked: false, plan: false, planT: 1, tape: 0, tapeA: null,
+  joy: { active: false, id: -1, dx: 0, dy: 0 },
+  look: { active: false, id: -1, lx: 0, ly: 0 },
+  touch: ('ontouchstart' in window) || navigator.maxTouchPoints > 0,
+};
+const overlay = document.getElementById('overlay');
+const cross = document.getElementById('cross');
+const posEl = document.getElementById('pos');
+const measureEl = document.getElementById('measure');
+const joyEl = document.getElementById('joy'), stickEl = joyEl.querySelector('.stick');
+if (state.touch) { joyEl.style.display = 'block'; }
+
+function tryLock() {
+  if (state.touch || state.plan) return;
+  if (canvas.requestPointerLock) canvas.requestPointerLock();
+}
+document.getElementById('goBtn').addEventListener('click', e => { e.stopPropagation(); enter(); });
+overlay.addEventListener('click', enter);
+function enter() {
+  overlay.style.display = 'none';
+  cross.hidden = false;
+  tryLock();
+}
+document.addEventListener('pointerlockchange', () => {
+  state.locked = document.pointerLockElement === canvas;
+});
+canvas.addEventListener('click', () => {
+  if (overlay.style.display === 'none' && !state.locked && !state.touch && !state.plan && !dragMoved) tryLock();
+});
+document.addEventListener('mousemove', e => {
+  if (state.plan) return;
+  if (state.locked) {
+    state.yaw -= e.movementX * 0.0023;
+    state.pitch -= e.movementY * 0.0023;
+    state.pitch = Math.max(-1.45, Math.min(1.45, state.pitch));
+  }
+});
+/* drag-look fallback (also touch look) */
+let dragMoved = false;
+canvas.addEventListener('pointerdown', e => {
+  if (state.plan) return;
+  if (state.touch && e.clientX < 170 && e.clientY > window.innerHeight - 220) return; // joystick zone
+  if (!state.locked) {
+    state.look.active = true; state.look.id = e.pointerId;
+    state.look.lx = e.clientX; state.look.ly = e.clientY; dragMoved = false;
+  }
+});
+window.addEventListener('pointermove', e => {
+  if (state.look.active && e.pointerId === state.look.id) {
+    const dx = e.clientX - state.look.lx, dy = e.clientY - state.look.ly;
+    if (Math.abs(dx) + Math.abs(dy) > 6) dragMoved = true;
+    state.yaw -= dx * 0.0045; state.pitch -= dy * 0.0045;
+    state.pitch = Math.max(-1.45, Math.min(1.45, state.pitch));
+    state.look.lx = e.clientX; state.look.ly = e.clientY;
+  }
+});
+window.addEventListener('pointerup', e => {
+  if (state.look.active && e.pointerId === state.look.id) state.look.active = false;
+  if (state.joy.active && e.pointerId === state.joy.id) {
+    state.joy.active = false; state.joy.dx = state.joy.dy = 0;
+    stickEl.style.transform = 'translate(0px,0px)';
+  }
+});
+/* touch joystick */
+joyEl.addEventListener('pointerdown', e => {
+  state.joy.active = true; state.joy.id = e.pointerId;
+  joyEl.setPointerCapture(e.pointerId);
+  e.stopPropagation();
+});
+joyEl.addEventListener('pointermove', e => {
+  if (!state.joy.active || e.pointerId !== state.joy.id) return;
+  const r = joyEl.getBoundingClientRect();
+  let dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
+  const m = Math.hypot(dx, dy), cap = r.width / 2 - 20;
+  if (m > cap) { dx *= cap / m; dy *= cap / m; }
+  state.joy.dx = dx / cap; state.joy.dy = dy / cap;
+  stickEl.style.transform = `translate(${dx}px,${dy}px)`;
+});
+window.addEventListener('keydown', e => {
+  if (e.repeat) return;
+  state.keys[e.code] = true;
+  if (e.code === 'KeyM') togglePlan();
+  if (e.code === 'KeyL') toggleLabels();
+  if (e.code === 'KeyF') toggleGroup(furniture, chipFurn);
+  if (e.code === 'KeyB') toggleGroup(builtins, chipBuilt);
+  if (e.code === 'KeyT') toggleTape();
+  if (e.code === 'KeyR') resetPos();
+});
+window.addEventListener('keyup', e => { state.keys[e.code] = false; });
+
+/* collision: slide along axes */
+const R = 0.22;
+function collideAxis(px, pz) {
+  for (const s of solids) {
+    if (s.group && !s.group.visible) continue;
+    if (px > s.minX - R && px < s.maxX + R && pz > s.minZ - R && pz < s.maxZ + R) return true;
+  }
+  return false;
+}
+function move(dt) {
+  if (state.plan) return;
+  let fx = 0, fz = 0;
+  if (state.keys.KeyW || state.keys.ArrowUp) fz -= 1;
+  if (state.keys.KeyS || state.keys.ArrowDown) fz += 1;
+  if (state.keys.KeyA || state.keys.ArrowLeft) fx -= 1;
+  if (state.keys.KeyD || state.keys.ArrowRight) fx += 1;
+  fx += state.joy.dx; fz += state.joy.dy;
+  const mag = Math.hypot(fx, fz);
+  if (mag < 0.01) return;
+  fx /= Math.max(1, mag); fz /= Math.max(1, mag);
+  const sp = (state.keys.ShiftLeft || state.keys.ShiftRight) ? 3.6 : 2.1;
+  const sin = Math.sin(state.yaw), cos = Math.cos(state.yaw);
+  // forward at yaw is (-sin, -cos); right is (cos, -sin)
+  const vx = (-sin * -fz + cos * fx) * sp * dt;
+  const vz = (-cos * -fz - sin * fx) * sp * dt;
+  const nx = state.pos.x + vx, nz = state.pos.z + vz;
+  if (!collideAxis(nx, state.pos.z)) state.pos.x = nx;
+  if (!collideAxis(state.pos.x, nz)) state.pos.z = nz;
+}
+function resetPos() {
+  state.pos.set(SPAWN.x, EYE, SPAWN.z); state.yaw = SPAWN.yaw; state.pitch = 0;
+}
+
+/* ---------- plan view ---------- */
+const chipPlan = document.getElementById('chipPlan');
+const chipLabels = document.getElementById('chipLabels');
+const chipTape = document.getElementById('chipTape');
+const chipFurn = document.getElementById('chipFurn');
+const chipBuilt = document.getElementById('chipBuilt');
+let labelsBeforePlan = false;
+const ceilingMesh = shell.children.find(m => m.name === 'ceiling');
+function togglePlan() {
+  state.plan = !state.plan;
+  chipPlan.dataset.on = state.plan ? '1' : '';
+  if (state.plan) {
+    if (state.locked && document.exitPointerLock) document.exitPointerLock();
+    labelsBeforePlan = labels.visible;
+    labels.visible = true; chipLabels.dataset.on = '1';
+    ceilingMesh.visible = false; uppersG.visible = false;
+    cross.hidden = true;
+  } else {
+    labels.visible = labelsBeforePlan; chipLabels.dataset.on = labelsBeforePlan ? '1' : '';
+    ceilingMesh.visible = true; uppersG.visible = builtins.visible;
+    cross.hidden = false;
+  }
+}
+function toggleLabels() {
+  labels.visible = !labels.visible;
+  chipLabels.dataset.on = labels.visible ? '1' : '';
+}
+function toggleGroup(g, chip) {
+  g.visible = !g.visible;
+  chip.dataset.on = g.visible ? '1' : '';
+  if (g === builtins) uppersG.visible = g.visible && !state.plan;
+}
+chipPlan.onclick = togglePlan;
+chipLabels.onclick = toggleLabels;
+chipTape.onclick = toggleTape;
+chipFurn.onclick = () => toggleGroup(furniture, chipFurn);
+chipBuilt.onclick = () => toggleGroup(builtins, chipBuilt);
+
+/* ---------- tape measure ---------- */
+const raycaster = new THREE.Raycaster();
+const tapeGroup = new THREE.Group(); scene.add(tapeGroup);
+function toggleTape() {
+  state.tape = state.tape ? 0 : 1;
+  state.tapeA = null;
+  tapeGroup.clear();
+  chipTape.dataset.on = state.tape ? '1' : '';
+  cross.classList.toggle('tape', !!state.tape);
+  measureEl.style.display = state.tape ? 'block' : 'none';
+  measureEl.textContent = 'tape: aim & click the first point';
+}
+function tapeMark(p) {
+  const m = new THREE.Mesh(new THREE.SphereGeometry(0.03, 10, 8),
+    new THREE.MeshBasicMaterial({ color: 0xd98e4a }));
+  m.position.copy(p); tapeGroup.add(m);
+}
+function tapeClick() {
+  raycaster.setFromCamera({ x: 0, y: 0 }, camera);
+  const isShown = o => { while (o) { if (o.visible === false) return false; o = o.parent; } return true; };
+  const hits = raycaster.intersectObjects(scene.children, true)
+    .filter(h => h.object.type === 'Mesh' && !tapeGroup.children.includes(h.object) && isShown(h.object));
+  if (!hits.length) return;
+  const p = hits[0].point;
+  if (!state.tapeA) {
+    state.tapeA = p.clone(); tapeGroup.clear(); tapeMark(p);
+    measureEl.textContent = 'tape: now click the second point';
+  } else {
+    tapeMark(p);
+    const a = state.tapeA, d = a.distanceTo(p);
+    const dir = p.clone().sub(a);
+    const cyl = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, d, 6),
+      new THREE.MeshBasicMaterial({ color: 0xd98e4a }));
+    cyl.position.copy(a).add(dir.clone().multiplyScalar(0.5));
+    cyl.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize());
+    tapeGroup.add(cyl);
+    measureEl.textContent = `${d.toFixed(3)} m  ·  ${(d * 1000).toFixed(0)} mm`;
+    state.tapeA = null;
+  }
+}
+canvas.addEventListener('pointerup', e => {
+  if (state.tape && !dragMoved && overlay.style.display === 'none' && !state.plan) tapeClick();
+});
+document.addEventListener('mousedown', e => {
+  if (state.tape && state.locked) tapeClick();
+});
+
+/* ---------- camera + loop ---------- */
+function planCamPos() {
+  const aspect = camera.aspect || 1;
+  const tanV = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+  const halfX = ROOM.w / 2 + 0.4, halfZ = (ROOM.d + 1.4) / 2 + 0.4;
+  const dist = Math.max(halfZ / tanV, halfX / (tanV * aspect)) + 0.5;
+  return new THREE.Vector3(ROOM.w / 2, dist, (ROOM.d + 1.0) / 2);
+}
+const clock = new THREE.Clock();
+function frame() {
+  requestAnimationFrame(frame);
+  const dt = Math.min(clock.getDelta(), 0.05);
+  // ease plan transition
+  state.planT += ((state.plan ? 0 : 1) - state.planT) * Math.min(1, dt * 5);
+  if (state.plan || state.planT < 0.995) {
+    const pc = planCamPos();
+    const t = 1 - state.planT;
+    const wx = state.pos.x, wy = EYE, wz = state.pos.z;
+    camera.position.set(wx + (pc.x - wx) * t, wy + (pc.y - wy) * t, wz + (pc.z - wz) * t);
+    const qWalk = new THREE.Quaternion().setFromEuler(new THREE.Euler(state.pitch, state.yaw, 0, 'YXZ'));
+    const qPlan = new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI / 2, 0, 0, 'YXZ'));
+    camera.quaternion.copy(qWalk).slerp(qPlan, t);
+  } else {
+    move(dt);
+    camera.position.copy(state.pos);
+    camera.quaternion.setFromEuler(new THREE.Euler(state.pitch, state.yaw, 0, 'YXZ'));
+  }
+  posEl.textContent = `x ${state.pos.x.toFixed(2)} · y ${state.pos.z.toFixed(2)} m`;
+  renderer.render(scene, camera);
+}
+function resize() {
+  const w = window.innerWidth, h = window.innerHeight;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h; camera.updateProjectionMatrix();
+}
+window.addEventListener('resize', resize);
+resize();
+resetPos();
+frame();
+</script>
