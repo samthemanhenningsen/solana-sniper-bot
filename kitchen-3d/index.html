@@ -89,6 +89,7 @@
     <button class="chip" id="chipTape">Tape<kbd>T</kbd></button>
     <button class="chip" id="chipFurn" data-on="1">Furniture<kbd>F</kbd></button>
     <button class="chip" id="chipBuilt" data-on="1">Cabinets<kbd>B</kbd></button>
+    <button class="chip" id="chipReset">Reset<kbd>R</kbd></button>
   </div>
   <div id="hints" class="plate"><b>WASD</b> walk &nbsp;·&nbsp; <b>mouse</b> look &nbsp;·&nbsp; <b>Shift</b> run &nbsp;·&nbsp; <b>M</b> plan &nbsp;·&nbsp; <b>T</b> tape measure &nbsp;·&nbsp; <b>R</b> reset</div>
   <div id="pos" class="plate">x 0.00 · y 0.00 m</div>
@@ -121,7 +122,7 @@ const ROOM = { w: 5.32, d: 4.56, h: 2.45 };
 const ENC  = { w: 1.63, d: 1.35 };                    // white boxed stair enclosure, NW corner
 const N_WINDOW = { from: 1.90, w: 1.40, sill: 1.10, head: 2.00 };
 const E_DOOR   = { from: 1.454, w: 0.86, h: 2.03 };   // light slab door, from NE corner going south
-const W_DOOR   = { from: 1.55, w: 0.87, h: 2.03 };    // dark exterior door, from NW going south
+const W_DOOR   = { from: 1.40, w: 0.87, h: 2.03 };    // dark exterior door, from NW going south (light switch between it and the window)
 const W_WINDOW = { from: 2.45, w: 1.17, sill: 0.78, head: 2.05 };
 const PART     = { from: 2.88, w: 2.44, h: 2.30 };    // folding partition on south wall, from SW going east
 const EYE = 1.60, WALL_T = 0.12;
@@ -342,16 +343,18 @@ function buildWall(group, mat, len, openings, place) {
   if (u < len - 0.001) place(u, len, 0, ROOM.h);
 }
 function wallX(group, mat, z, sign, len, openings) {  // wall along x at plan z; sign: -1 wall extends to -z (north wall)
+  const zA = z + Math.min(0, sign * WALL_T), zB = z + Math.max(0, sign * WALL_T);
   buildWall(group, mat, len, openings, (u0, u1, y0, y1) => {
     box(group, mat, u1 - u0, y1 - y0, WALL_T, (u0 + u1) / 2, (y0 + y1) / 2, z + sign * WALL_T / 2);
+    if (y0 === 0) solid(u0, zA, u1, zB);      // only floor-level wall blocks walking — openings stay passable
   });
-  solid(-WALL_T, z + Math.min(0, sign * WALL_T), len + WALL_T, z + Math.max(0, sign * WALL_T));
 }
 function wallZ(group, mat, x, sign, len, openings) {  // wall along z at plan x
+  const xA = x + Math.min(0, sign * WALL_T), xB = x + Math.max(0, sign * WALL_T);
   buildWall(group, mat, len, openings, (u0, u1, y0, y1) => {
     box(group, mat, WALL_T, y1 - y0, u1 - u0, x + sign * WALL_T / 2, (y0 + y1) / 2, (u0 + u1) / 2);
+    if (y0 === 0) solid(xA, u0, xB, u1);
   });
-  solid(x + Math.min(0, sign * WALL_T), -WALL_T, x + Math.max(0, sign * WALL_T), len + WALL_T);
 }
 
 wallX(shell, M.wall, 0, -1, ROOM.w, [{ from: N_WINDOW.from, w: N_WINDOW.w, sill: N_WINDOW.sill, head: N_WINDOW.head }]);
@@ -361,6 +364,9 @@ wallZ(shell, M.wallDining, 0, -1, ROOM.d, [
   { from: W_DOOR.from, w: W_DOOR.w, sill: 0, head: W_DOOR.h },
   { from: W_WINDOW.from, w: W_WINDOW.w, sill: W_WINDOW.sill, head: W_WINDOW.head },
 ]);
+/* closed door slabs still block walking (the partition gap stays open) */
+solid(ROOM.w - 0.05, E_DOOR.from, ROOM.w + WALL_T, E_DOOR.from + E_DOOR.w);
+solid(-WALL_T, W_DOOR.from, 0.05, W_DOOR.from + W_DOOR.w);
 
 /* ---------- windows ---------- */
 function windowUnit(cx, cy, cz, w, h, ry) {
@@ -437,7 +443,7 @@ function doorUnit(mat, cx, cy, cz, w, h, ry, knobSide) {
   shell.add(g); return g;
 }
 doorUnit(new THREE.MeshLambertMaterial({ map: doorPanelTex }), 0.035, W_DOOR.h / 2, W_DOOR.from + W_DOOR.w / 2, W_DOOR.w, W_DOOR.h, Math.PI / 2, 1);
-doorUnit(M.woodBlond, ROOM.w - 0.035, E_DOOR.h / 2, E_DOOR.from + E_DOOR.w / 2, E_DOOR.w, E_DOOR.h, Math.PI / 2, -1);
+doorUnit(M.woodBlond, ROOM.w - 0.035, E_DOOR.h / 2, E_DOOR.from + E_DOOR.w / 2, E_DOOR.w, E_DOOR.h, -Math.PI / 2, 1);
 
 /* ---------- folding partition (south wall) ---------- */
 {
@@ -470,6 +476,8 @@ doorUnit(M.woodBlond, ROOM.w - 0.035, E_DOOR.h / 2, E_DOOR.from + E_DOOR.w / 2, 
   solid(LR.x0 - 0.2, LR.z0, LR.x0, LR.z1); solid(LR.x1, LR.z0, LR.x1 + 0.2, LR.z1); solid(LR.x0, LR.z1, LR.x1, LR.z1 + 0.2);
   const win = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 1.7), M.blinds);
   win.rotation.y = Math.PI; win.position.set(3.9, 1.5, LR.z1 - 0.01); shell.add(win);
+  const thresh = new THREE.Mesh(new THREE.PlaneGeometry(PART.w, 0.16), M.parquet);   // floor across the wall thickness
+  thresh.rotation.x = -Math.PI / 2; thresh.position.set(px0 + PART.w / 2, 0.002, ROOM.d + 0.055); shell.add(thresh);
   // cat tree silhouette
   const ct = new THREE.Group();
   box(ct, M.tan, 0.5, 0.04, 0.5, 0, 0.02, 0);
@@ -493,7 +501,7 @@ doorUnit(M.woodBlond, ROOM.w - 0.035, E_DOOR.h / 2, E_DOOR.from + E_DOOR.w / 2, 
   const tv = new THREE.Group();
   box(tv, M.black, 0.56, 0.36, 0.05, 0, 0, 0);
   box(tv, M.blackMatte, 0.1, 0.12, 0.06, 0, -0.22, 0);
-  tv.position.set(1.28, 2.16, 0.30); tv.rotation.y = -0.5; shell.add(tv);
+  tv.position.set(1.30, 2.20, 1.08); tv.rotation.y = 0.28; shell.add(tv);
 }
 
 /* ---------- ceiling lights ---------- */
@@ -565,7 +573,8 @@ counterRun(4.67, 0, ROOM.w - 4.67, CD);
   neck.position.set(0, CT + 0.20, -0.19); sk.add(neck);
   const arc = new THREE.Mesh(new THREE.TorusGeometry(0.11, 0.013, 8, 12, Math.PI * 0.85), M.steel);
   arc.position.set(0, CT + 0.35, -0.19); arc.rotation.y = Math.PI / 2; sk.add(arc);
-  sk.position.set(2.18, 0, 0.30); builtins.add(sk);
+  sk.rotation.y = Math.PI / 4;                       // corner install — basins angle across the L
+  sk.position.set(2.06, 0, 0.40); builtins.add(sk);
 }
 /* microwave on shelf left of stove */
 box(builtins, M.cabUp, 0.56, 0.03, 0.38, 3.62, 1.04, 0.20);
@@ -607,16 +616,13 @@ function uppers(x, z, w, y0, y1, d, ry) {
 uppers(N_WINDOW.from + N_WINDOW.w + 0.05, 0, 3.91 - (N_WINDOW.from + N_WINDOW.w + 0.05), 1.45, 2.35, 0.33);
 uppers(3.91, 0, 0.76, 1.95, 2.35, 0.33);                            // over hood
 uppers(4.67, 0, ROOM.w - 4.67, 1.45, 2.35, 0.33);
-uppers(ENC.w, 0, N_WINDOW.from - ENC.w - 0.02, 1.45, 2.35, 0.33);   // small run west of window
 /* quarter-round open corner shelves at NE */
 for (const y of [1.30, 1.62, 1.94]) {
   const q = new THREE.Mesh(new THREE.CylinderGeometry(0.30, 0.30, 0.025, 14, 1, false, -Math.PI / 2, Math.PI / 2), M.wood);
   q.position.set(ROOM.w - 0.01, y, 0.01); uppersG.add(q);
 }
-/* east-wall high cabinet over the pier */
-{
-  const u = box(uppersG, M.cabUp, 0.33, 0.45, 1.1, ROOM.w - 0.165, 2.22, 2.05);
-}
+/* east-wall uppers over the pier (full-height doors per the photos) */
+box(uppersG, M.cabUp, 0.33, 0.90, 1.1, ROOM.w - 0.165, 1.90, 2.05);
 /* fridge + uppers above */
 {
   const fr = new THREE.Group();
@@ -634,6 +640,7 @@ for (const y of [1.30, 1.62, 1.94]) {
   builtins.add(fr);
   solid(1.60, ROOM.d - 0.75, 2.51, ROOM.d, builtins);
   uppers(1.60, ROOM.d - 0.35, 0.91, 1.92, 2.40, 0.35).rotation.y = Math.PI;
+  uppers(0.55, ROOM.d - 0.35, 1.05, 1.92, 2.40, 0.35).rotation.y = Math.PI;   // run continues west of the fridge
 }
 /* white column between fridge and partition */
 box(shell, M.wallDining, 0.37, ROOM.h, 0.10, 2.695, ROOM.h / 2, ROOM.d - 0.05);
@@ -650,7 +657,8 @@ box(shell, M.wallDining, 0.37, ROOM.h, 0.10, 2.695, ROOM.h / 2, ROOM.d - 0.05);
 /* tall glass display cabinet (furniture-ish but against wall) */
 {
   const dx = ROOM.w - 0.5, dz = 2.60;
-  pbox(furniture, M.woodDark, dx, dz, 0.5, 0.45, 0, 1.75);
+  pbox(furniture, M.wood, dx, dz, 0.5, 0.45, 0, 1.75);
+  for (let i = 0; i < 3; i++) box(furniture, M.woodDark, 0.025, 0.15, 0.34, dx - 0.012, 0.16 + i * 0.20, dz + 0.225);
   const gl = new THREE.Mesh(new THREE.PlaneGeometry(0.34, 0.9), M.frost);
   gl.rotation.y = -Math.PI / 2; gl.position.set(dx - 0.005, 1.2, dz + 0.225); furniture.add(gl);
   box(furniture, M.blackMatte, 0.3, 0.12, 0.2, dx + 0.25, 1.81, dz + 0.225);           // boombox on top
@@ -850,12 +858,29 @@ const cross = document.getElementById('cross');
 const posEl = document.getElementById('pos');
 const measureEl = document.getElementById('measure');
 const joyEl = document.getElementById('joy'), stickEl = joyEl.querySelector('.stick');
-if (state.touch) { joyEl.style.display = 'block'; }
+state.lastPointer = state.touch ? 'touch' : 'mouse';
+state.joyShown = false;
+window.addEventListener('pointerdown', e => {
+  state.lastPointer = e.pointerType || 'mouse';
+  if (e.pointerType === 'touch' && !state.joyShown && state.mode !== 'photo') {
+    state.joyShown = true; joyEl.style.display = 'block';   // joystick appears on first actual touch
+  }
+}, true);
+if (state.touch) {
+  document.getElementById('hints').innerHTML = '<b>left pad</b> walks · <b>drag</b> looks · chips up top switch views';
+}
 
 function tryLock() {
-  if (state.touch || state.plan) return;
-  if (canvas.requestPointerLock) canvas.requestPointerLock();
+  if (state.plan || state.lastPointer === 'touch') return;
+  try {
+    const p = canvas.requestPointerLock && canvas.requestPointerLock();
+    if (p && p.catch) p.catch(() => {});
+  } catch (err) { /* pointer lock unavailable — drag-look still works */ }
 }
+document.addEventListener('pointerlockerror', () => {
+  const h = document.getElementById('hints');
+  if (h) h.innerHTML = 'mouse capture failed — <b>click again</b>, or just drag to look';
+});
 document.getElementById('goBtn').addEventListener('click', e => { e.stopPropagation(); enter(); });
 overlay.addEventListener('click', enter);
 function enter() {
@@ -867,7 +892,7 @@ document.addEventListener('pointerlockchange', () => {
   state.locked = document.pointerLockElement === canvas;
 });
 canvas.addEventListener('click', () => {
-  if (overlay.style.display === 'none' && !state.locked && !state.touch && !state.plan && !dragMoved) tryLock();
+  if (overlay.style.display === 'none' && !state.locked && !state.plan && !state.tape && !dragMoved) tryLock();
 });
 document.addEventListener('mousemove', e => {
   if (state.plan) return;
@@ -961,8 +986,13 @@ function move(dt) {
   const vx = (-sin * -fz + cos * fx) * sp * dt;
   const vz = (-cos * -fz - sin * fx) * sp * dt;
   const nx = state.pos.x + vx, nz = state.pos.z + vz;
-  if (!collideAxis(nx, state.pos.z)) state.pos.x = nx;
-  if (!collideAxis(state.pos.x, nz)) state.pos.z = nz;
+  if (collideAxis(state.pos.x, state.pos.z)) {
+    // already embedded (e.g. a hidden cabinet was toggled back on) — move freely so the player can escape
+    state.pos.x = nx; state.pos.z = nz;
+  } else {
+    if (!collideAxis(nx, state.pos.z)) state.pos.x = nx;
+    if (!collideAxis(state.pos.x, nz)) state.pos.z = nz;
+  }
 }
 function resetPos() {
   state.pos.set(SPAWN.x, EYE, SPAWN.z); state.yaw = SPAWN.yaw; state.pitch = 0;
@@ -981,6 +1011,7 @@ function togglePlan() {
   chipPlan.dataset.on = state.plan ? '1' : '';
   if (state.plan) {
     if (state.locked && document.exitPointerLock) document.exitPointerLock();
+    if (state.tape) toggleTape();
     labelsBeforePlan = labels.visible;
     labels.visible = true; chipLabels.dataset.on = '1';
     ceilingMesh.visible = false; uppersG.visible = false;
@@ -1005,11 +1036,18 @@ chipLabels.onclick = toggleLabels;
 chipTape.onclick = toggleTape;
 chipFurn.onclick = () => toggleGroup(furniture, chipFurn);
 chipBuilt.onclick = () => toggleGroup(builtins, chipBuilt);
+document.getElementById('chipReset').onclick = resetPos;
 
 /* ---------- tape measure ---------- */
 const raycaster = new THREE.Raycaster();
 const tapeGroup = new THREE.Group(); scene.add(tapeGroup);
 function toggleTape() {
+  if (!state.tape && state.plan) {
+    measureEl.style.display = 'block';
+    measureEl.textContent = 'tape works in walk mode — leave plan view first';
+    setTimeout(() => { if (!state.tape) measureEl.style.display = 'none'; }, 2000);
+    return;
+  }
   state.tape = state.tape ? 0 : 1;
   state.tapeA = null;
   tapeGroup.clear();
@@ -1047,7 +1085,7 @@ function tapeClick() {
   }
 }
 canvas.addEventListener('pointerup', e => {
-  if (state.tape && !dragMoved && overlay.style.display === 'none' && !state.plan) tapeClick();
+  if (state.tape && !state.locked && !dragMoved && overlay.style.display === 'none' && !state.plan) tapeClick();
 });
 document.addEventListener('mousedown', e => {
   if (state.tape && state.locked) tapeClick();
@@ -1110,7 +1148,7 @@ function setMode(m) {
   chipsEl.style.display = photo ? 'none' : 'flex';
   hintsEl.style.display = photo ? 'none' : '';
   posEl.style.display = photo ? 'none' : '';
-  joyEl.style.display = photo ? 'none' : (state.touch ? 'block' : 'none');
+  joyEl.style.display = photo ? 'none' : (state.joyShown ? 'block' : 'none');
   cross.hidden = photo || state.plan || overlay.style.display !== 'none';
   mode3dBtn.dataset.on = photo ? '' : '1';
   modePhotoBtn.dataset.on = photo ? '1' : '';
